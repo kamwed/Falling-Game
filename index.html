@@ -123,7 +123,7 @@
 
         .score-display {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             color: white;
             font-size: 20px;
             font-weight: bold;
@@ -310,8 +310,8 @@
         /* Adjust for mobile */
         @media (max-width: 767px) {
             .score-display {
-                font-size: 14px;
-                gap: 15px;
+                font-size: 13px;
+                gap: 10px;
             }
 
             .controls {
@@ -340,6 +340,7 @@
     <div class="game-container">
         <div class="score-display">
             <div class="score-item">Score: <span id="score">0</span></div>
+            <div class="score-item">Level: <span id="level">1</span></div>
             <div class="score-item">Rank: <span id="currentRank">#-</span></div>
             <div class="score-item">Coins: <span id="coins">0</span></div>
             <div class="score-item">Attempts: <span id="attempts">0/100</span></div>
@@ -507,6 +508,8 @@
         let resetTime = localStorage.getItem('resetTime') || null;
         let countdownInterval = null;
         let isAuthenticating = false;
+        let currentLevel = 1;
+        let playerSpeed = 2; // Starting fall speed
 
         // Get DOM elements
         const canvas = document.getElementById('gameCanvas');
@@ -523,6 +526,7 @@
         const restartButton = document.getElementById('restartButton');
         const copyButton = document.getElementById('copyButton');
         const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
         const currentRankDisplay = document.getElementById('currentRank');
         const coinsDisplay = document.getElementById('coins');
         const attemptsDisplay = document.getElementById('attempts');
@@ -1178,9 +1182,12 @@
             cameraY = 0;
             lastSpawnY = 0;
             gameOver = false;
+            currentLevel = 1;
+            playerSpeed = 2;
             keysPressed = { left: false, right: false };
             
             scoreDisplay.textContent = '0';
+            levelDisplay.textContent = '1';
             coinsDisplay.textContent = '0';
             
             await updateCurrentRank();
