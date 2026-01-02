@@ -32,10 +32,12 @@
 
         .score-display {
             display: flex;
-            gap: 30px;
+            gap: 20px;
             color: white;
             font-size: 20px;
             font-weight: bold;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .game-canvas-wrapper {
@@ -214,8 +216,8 @@
         /* Adjust for mobile */
         @media (max-width: 767px) {
             .score-display {
-                font-size: 16px;
-                gap: 20px;
+                font-size: 14px;
+                gap: 15px;
             }
 
             .controls {
@@ -246,6 +248,7 @@
             <div class="score-item">Score: <span id="score">0</span></div>
             <div class="score-item">Rank: <span id="currentRank">#-</span></div>
             <div class="score-item">Coins: <span id="coins">0</span></div>
+            <div class="score-item">Attempts: <span id="attempts">1</span></div>
         </div>
         
         <div class="game-canvas-wrapper">
@@ -278,12 +281,25 @@
                 <div class="screen-content">
                     <h1>Game Over!</h1>
                     <p class="stat">Your Score: <span id="finalScore">0</span></p>
+                    <p class="stat">High Score: <span id="finalHighScore">0</span></p>
                     <p class="stat">Your Rank: <span id="finalRank">Calculating...</span></p>
                     <p class="stat">Coins Collected: <span id="finalCoins">0</span></p>
+                    <p class="stat">Attempts Remaining: <span id="finalAttempts">1</span></p>
                     <div>
                         <button id="copyButton" class="btn btn-copy">📋 Copy Result</button>
                         <button id="restartButton" class="btn btn-restart">Play Again</button>
                     </div>
+                </div>
+            </div>
+            
+            <!-- No Attempts Screen -->
+            <div id="noAttemptsScreen" class="overlay-screen" style="display: none;">
+                <div class="screen-content">
+                    <h1>No Attempts Remaining!</h1>
+                    <p>You've used all your attempts.</p>
+                    <p class="stat">Your High Score: <span id="noAttemptsHighScore">0</span></p>
+                    <p class="stat">Your Rank: <span id="noAttemptsRank">#-</span></p>
+                    <p style="margin-top: 20px;">Come back later for more attempts!</p>
                 </div>
             </div>
         </div>
@@ -345,6 +361,7 @@
         let gameLoopInterval = null;
         let playerName = localStorage.getItem('playerName') || '';
         let currentRank = null;
+        let attemptsRemaining = parseInt(localStorage.getItem('attemptsRemaining')) || 1;
 
         // Get DOM elements
         const canvas = document.getElementById('gameCanvas');
@@ -352,6 +369,7 @@
         const introScreen = document.getElementById('introScreen');
         const nameScreen = document.getElementById('nameScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
+        const noAttemptsScreen = document.getElementById('noAttemptsScreen');
         const startButton = document.getElementById('startButton');
         const submitNameButton = document.getElementById('submitNameButton');
         const playerNameInput = document.getElementById('playerNameInput');
@@ -360,9 +378,14 @@
         const scoreDisplay = document.getElementById('score');
         const currentRankDisplay = document.getElementById('currentRank');
         const coinsDisplay = document.getElementById('coins');
+        const attemptsDisplay = document.getElementById('attempts');
         const finalScoreDisplay = document.getElementById('finalScore');
+        const finalHighScoreDisplay = document.getElementById('finalHighScore');
         const finalCoinsDisplay = document.getElementById('finalCoins');
         const finalRankDisplay = document.getElementById('finalRank');
+        const finalAttemptsDisplay = document.getElementById('finalAttempts');
+        const noAttemptsHighScore = document.getElementById('noAttemptsHighScore');
+        const noAttemptsRank = document.getElementById('noAttemptsRank');
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
@@ -372,6 +395,9 @@
             if (saved) {
                 highScore = parseInt(saved);
             }
+            
+            // Update attempts display
+            attemptsDisplay.textContent = attemptsRemaining;
             
             // Load current rank if player has a name
             if (playerName) {
@@ -432,6 +458,18 @@
 
         // Start game
         async function startGame() {
+            // Check if player has attempts remaining
+            if (attemptsRemaining <= 0) {
+                showIntro = false;
+                introScreen.style.display = 'none';
+                noAttemptsScreen.style.display = 'flex';
+                noAttemptsHighScore.textContent = highScore;
+                if (currentRank) {
+                    noAttemptsRank.textContent = `#${currentRank}`;
+                }
+                return;
+            }
+            
             showIntro = false;
             introScreen.style.display = 'none';
             
@@ -467,6 +505,17 @@
 
         // Restart game
         async function restartGame() {
+            // Check if player has attempts remaining
+            if (attemptsRemaining <= 0) {
+                gameOverScreen.style.display = 'none';
+                noAttemptsScreen.style.display = 'flex';
+                noAttemptsHighScore.textContent = highScore;
+                if (currentRank) {
+                    noAttemptsRank.textContent = `#${currentRank}`;
+                }
+                return;
+            }
+            
             player = { x: 175, y: 100 };
             obstacles = [];
             coins = [];
@@ -750,8 +799,15 @@
             gameOver = true;
             saveHighScore();
             
+            // Decrease attempts
+            attemptsRemaining--;
+            localStorage.setItem('attemptsRemaining', attemptsRemaining.toString());
+            attemptsDisplay.textContent = attemptsRemaining;
+            
             finalScoreDisplay.textContent = score;
+            finalHighScoreDisplay.textContent = highScore;
             finalCoinsDisplay.textContent = currency;
+            finalAttemptsDisplay.textContent = attemptsRemaining;
             
             gameOverScreen.style.display = 'flex';
             
