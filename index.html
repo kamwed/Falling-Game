@@ -440,49 +440,62 @@
         // Save score to Firestore and get global stats
         async function saveScoreAndGetStats() {
             try {
+                console.log('Saving score to Firestore...', { name: playerName, score });
+                
                 // Save score to Firestore
-                await addDoc(collection(db, 'scores'), {
+                const docRef = await addDoc(collection(db, 'scores'), {
                     name: playerName,
                     score: score,
                     createdAt: Timestamp.now()
                 });
+                console.log('Score saved with ID:', docRef.id);
 
-                // Get all scores for ranking
-                const allScoresQuery = query(
-                    collection(db, 'scores'),
-                    orderBy('score', 'desc')
-                );
+                // Get all scores for ranking (simple query without orderBy first)
+                console.log('Fetching all scores...');
+                const allScoresQuery = query(collection(db, 'scores'));
                 const allScoresSnapshot = await getDocs(allScoresQuery);
-                const allScores = allScoresSnapshot.docs.map(doc => doc.data().score);
+                console.log('Total scores found:', allScoresSnapshot.size);
+                
+                const allScores = [];
+                allScoresSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    console.log('Score doc:', data);
+                    allScores.push(data.score);
+                });
+                
+                // Sort scores manually
+                allScores.sort((a, b) => b - a);
+                console.log('All scores sorted:', allScores);
                 
                 // Calculate rank (number of scores strictly greater + 1)
                 const rank = allScores.filter(s => s > score).length + 1;
                 const totalPlayers = allScores.length;
-                const percentile = ((rank / totalPlayers) * 100).toFixed(1);
+                const percentile = totalPlayers > 1 ? ((rank / totalPlayers) * 100).toFixed(1) : 100;
+                
+                console.log('Rank calculation:', { rank, totalPlayers, percentile });
 
                 // Get today's top score
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const todayTimestamp = Timestamp.fromDate(today);
+                console.log('Today timestamp:', todayTimestamp.toDate());
                 
-                const todayQuery = query(
-                    collection(db, 'scores'),
-                    where('createdAt', '>=', todayTimestamp),
-                    orderBy('createdAt', 'desc'),
-                    orderBy('score', 'desc'),
-                    limit(1)
-                );
-                const todaySnapshot = await getDocs(todayQuery);
-                const topToday = todaySnapshot.empty ? score : Math.max(score, todaySnapshot.docs[0].data().score);
+                // Filter scores from today manually
+                const todayScores = [];
+                allScoresSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.createdAt && data.createdAt.toDate() >= today) {
+                        todayScores.push(data.score);
+                    }
+                });
+                console.log('Today scores:', todayScores);
+                
+                const topToday = todayScores.length > 0 ? Math.max(...todayScores) : score;
 
                 // Get all-time top score
-                const allTimeQuery = query(
-                    collection(db, 'scores'),
-                    orderBy('score', 'desc'),
-                    limit(1)
-                );
-                const allTimeSnapshot = await getDocs(allTimeQuery);
-                const topAllTime = allTimeSnapshot.empty ? score : Math.max(score, allTimeSnapshot.docs[0].data().score);
+                const topAllTime = allScores.length > 0 ? Math.max(...allScores) : score;
+                
+                console.log('Final stats:', { rank, totalPlayers, percentile, topToday, topAllTime });
 
                 return {
                     rank,
@@ -493,6 +506,7 @@
                 };
             } catch (error) {
                 console.error('Error saving score:', error);
+                console.error('Error details:', error.message, error.code);
                 return {
                     rank: 1,
                     totalPlayers: 1,
