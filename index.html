@@ -505,12 +505,11 @@
             const diff = getTimeUntilMidnightUTC();
             
             if (diff <= 0) {
-                checkAttemptsReset();
                 if (countdownDisplay) {
                     countdownDisplay.textContent = '00:00:00';
                 }
-                // Refresh attempts
-                loadAttemptsData();
+                // Page needs refresh for new day
+                location.reload();
                 return;
             }
             
@@ -625,13 +624,14 @@
                 return;
             }
             
-            // Check attempts
+            showIntro = false;
+            introScreen.style.display = 'none';
+            
+            // Check attempts first
             await loadAttemptsData();
             
             // Check if player has attempts remaining
             if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
-                showIntro = false;
-                introScreen.style.display = 'none';
                 noAttemptsScreen.style.display = 'flex';
                 noAttemptsHighScore.textContent = highScore;
                 if (currentRank) {
@@ -641,17 +641,21 @@
                 return;
             }
             
-            // Try to increment attempts in Firestore
+            // Try to increment attempts in Firestore BEFORE starting game
             try {
                 await incrementAttempts();
                 attemptsDisplay.textContent = `${attemptsUsedToday}/${MAX_ATTEMPTS_PER_DAY}`;
             } catch (error) {
-                alert('Failed to start game: ' + error.message);
+                console.error('Failed to increment attempts:', error);
+                // If we hit max attempts, show the no attempts screen
+                noAttemptsScreen.style.display = 'flex';
+                noAttemptsHighScore.textContent = highScore;
+                if (currentRank) {
+                    noAttemptsRank.textContent = `#${currentRank}`;
+                }
+                startCountdown();
                 return;
             }
-            
-            showIntro = false;
-            introScreen.style.display = 'none';
             
             await updateCurrentRank();
             gameLoop();
@@ -686,7 +690,7 @@
             await loadAttemptsData();
             await updateCurrentRank();
             
-            // Check if they have attempts left
+            // Check if they have attempts left BEFORE trying to start
             if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
                 noAttemptsScreen.style.display = 'flex';
                 noAttemptsHighScore.textContent = highScore;
@@ -694,9 +698,26 @@
                     noAttemptsRank.textContent = `#${currentRank}`;
                 }
                 startCountdown();
-            } else {
-                // Start the game
-                await startGame();
+                return;
+            }
+            
+            // Try to increment attempts BEFORE starting game
+            try {
+                await incrementAttempts();
+                attemptsDisplay.textContent = `${attemptsUsedToday}/${MAX_ATTEMPTS_PER_DAY}`;
+                
+                // Only start game if increment succeeded
+                await updateCurrentRank();
+                gameLoop();
+            } catch (error) {
+                console.error('Failed to increment attempts:', error);
+                // If increment failed, show no attempts screen
+                noAttemptsScreen.style.display = 'flex';
+                noAttemptsHighScore.textContent = highScore;
+                if (currentRank) {
+                    noAttemptsRank.textContent = `#${currentRank}`;
+                }
+                startCountdown();
             }
         });
 
@@ -722,12 +743,13 @@
                 return;
             }
             
+            gameOverScreen.style.display = 'none';
+            
             // Check attempts
             await loadAttemptsData();
             
             // Check if player has attempts remaining
             if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
-                gameOverScreen.style.display = 'none';
                 noAttemptsScreen.style.display = 'flex';
                 noAttemptsHighScore.textContent = highScore;
                 if (currentRank) {
@@ -737,12 +759,19 @@
                 return;
             }
             
-            // Try to increment attempts in Firestore
+            // Try to increment attempts in Firestore BEFORE starting game
             try {
                 await incrementAttempts();
                 attemptsDisplay.textContent = `${attemptsUsedToday}/${MAX_ATTEMPTS_PER_DAY}`;
             } catch (error) {
-                alert('Failed to start game: ' + error.message);
+                console.error('Failed to increment attempts:', error);
+                // If we hit max attempts, show the no attempts screen
+                noAttemptsScreen.style.display = 'flex';
+                noAttemptsHighScore.textContent = highScore;
+                if (currentRank) {
+                    noAttemptsRank.textContent = `#${currentRank}`;
+                }
+                startCountdown();
                 return;
             }
             
@@ -756,7 +785,6 @@
             gameOver = false;
             keysPressed = { left: false, right: false };
             
-            gameOverScreen.style.display = 'none';
             scoreDisplay.textContent = '0';
             coinsDisplay.textContent = '0';
             
