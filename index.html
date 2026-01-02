@@ -363,7 +363,7 @@
         let gameLoopInterval = null;
         let playerName = localStorage.getItem('playerName') || '';
         let currentRank = null;
-        let attemptsRemaining = parseInt(localStorage.getItem('attemptsRemaining')) || 1;
+        let attemptsRemaining = localStorage.getItem('attemptsRemaining') !== null ? parseInt(localStorage.getItem('attemptsRemaining')) : 1;
         let resetTime = localStorage.getItem('resetTime') || null;
         let countdownInterval = null;
 
