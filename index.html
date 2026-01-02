@@ -262,10 +262,14 @@
             bottom: 0;
             left: 0;
             right: 0;
-            display: flex;
+            display: none;
             justify-content: space-between;
             padding: 20px;
             z-index: 1000;
+        }
+
+        .touch-controls.active {
+            display: flex;
         }
 
         .touch-button {
@@ -540,6 +544,7 @@
         const menuLogin = document.getElementById('menuLogin');
         const menuHowToPlay = document.getElementById('menuHowToPlay');
         const menuFeedback = document.getElementById('menuFeedback');
+        const touchControls = document.querySelector('.touch-controls');
 
         // Generate a unique device ID
         function generateDeviceId() {
@@ -1453,6 +1458,9 @@
             gameOver = true;
             saveHighScore();
             
+            // Hide touch controls
+            touchControls.classList.remove('active');
+            
             // Save coins earned this game
             if (currency > 0) {
                 await saveUserCoins(currency);
@@ -1500,6 +1508,9 @@
                 console.error('Cannot start game - no user or out of attempts');
                 return;
             }
+            
+            // Show touch controls for mobile
+            touchControls.classList.add('active');
             
             gameLoopInterval = setInterval(() => {
                 update();
