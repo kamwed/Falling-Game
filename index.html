@@ -1405,19 +1405,26 @@
             score += Math.ceil(speedMultiplier);
             scoreDisplay.textContent = score;
             
-            // Spawn obstacles and coins (more frequent at higher levels)
+            // Spawn obstacles and coins
             const spawnInterval = 100;
             const currentInterval = Math.floor(player.y / spawnInterval);
             const lastInterval = Math.floor(lastSpawnY / spawnInterval);
             
             if (currentInterval > lastInterval) {
-                // Spawn obstacles based on level
-                const obstacleCount = Math.min(Math.floor(currentLevel / 2) + 1, 3); // 1-3 obstacles
-                for (let i = 0; i < obstacleCount; i++) {
+                // Always spawn at least 1 obstacle
+                obstacles.push({
+                    x: Math.random() * (GAME_WIDTH - OBSTACLE_WIDTH),
+                    y: player.y + GAME_HEIGHT - 100,
+                    id: Date.now()
+                });
+                
+                // Spawn additional obstacles at higher levels
+                const extraObstacles = Math.min(Math.floor((currentLevel - 1) / 2), 2);
+                for (let i = 0; i < extraObstacles; i++) {
                     obstacles.push({
                         x: Math.random() * (GAME_WIDTH - OBSTACLE_WIDTH),
-                        y: player.y + GAME_HEIGHT - 100 + (i * 200),
-                        id: Date.now() + i
+                        y: player.y + GAME_HEIGHT - 100 + ((i + 1) * 200),
+                        id: Date.now() + i + 1
                     });
                 }
                 
