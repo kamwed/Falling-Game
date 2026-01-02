@@ -605,13 +605,59 @@
             // Load attempts data
             await loadAttemptsData();
             
+            // Load user's best score and rank from Firestore
+            if (currentUser) {
+                await loadUserBestScore();
+            }
+            
             // Load current rank if player has a name
             if (playerName && currentUser) {
                 await updateCurrentRank();
             }
         }
 
-        // Update current rank display
+        // Load user's best score and update displays
+        async function loadUserBestScore() {
+            if (!currentUser) return;
+            
+            try {
+                // Get player's best score by UID
+                const playerScoresQuery = query(
+                    collection(db, 'scores'),
+                    where('uid', '==', currentUser.uid)
+                );
+                const playerScoresSnapshot = await getDocs(playerScoresQuery);
+                
+                let playerBestScore = 0;
+                playerScoresSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.score > playerBestScore) {
+                        playerBestScore = data.score;
+                    }
+                });
+                
+                if (playerBestScore > 0) {
+                    // Update high score if Firestore has a better score
+                    if (playerBestScore > highScore) {
+                        highScore = playerBestScore;
+                        localStorage.setItem('highScore', highScore.toString());
+                    }
+                    
+                    // Update no attempts screen displays
+                    noAttemptsHighScore.textContent = highScore;
+                }
+                
+                // Calculate and update rank
+                await updateCurrentRank();
+                
+                // Update no attempts screen rank display
+                if (currentRank) {
+                    noAttemptsRank.textContent = `#${currentRank}`;
+                }
+            } catch (error) {
+                console.error('Error loading user best score:', error);
+            }
+        }
         async function updateCurrentRank() {
             if (!currentUser) {
                 currentRankDisplay.textContent = '#-';
@@ -779,6 +825,7 @@
                 
                 await loadAttemptsData();
                 await updateCurrentRank();
+                await loadUserBestScore();
                 
                 // Check if they have attempts left BEFORE trying to start
                 if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
@@ -1295,6 +1342,7 @@
                 currentUser = user;
                 console.log('User authenticated:', user.email);
                 await loadHighScore();
+                await loadUserBestScore();
             } else {
                 console.log('No user authenticated');
                 currentUser = null;
