@@ -64,12 +64,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow-y: auto;
         }
 
         .screen-content {
             text-align: center;
             color: white;
             padding: 40px;
+            max-height: 100%;
+            overflow-y: auto;
         }
 
         .screen-content h1 {
@@ -88,8 +91,18 @@
         }
 
         .screen-content .stat {
-            font-size: 24px;
-            margin: 10px 0;
+            font-size: 20px;
+            margin: 8px 0;
+        }
+
+        .screen-content input {
+            padding: 12px 20px;
+            font-size: 18px;
+            border: 2px solid white;
+            border-radius: 8px;
+            margin: 20px 0;
+            width: 250px;
+            max-width: 90%;
         }
 
         .btn {
@@ -100,6 +113,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            margin: 5px;
         }
 
         .btn:hover {
@@ -122,6 +136,15 @@
 
         .btn-restart:hover {
             background: #2563eb;
+        }
+
+        .btn-copy {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #7c3aed;
         }
 
         .controls {
@@ -202,6 +225,18 @@
             .game-canvas-wrapper {
                 border-width: 2px;
             }
+
+            .screen-content h1 {
+                font-size: 36px;
+            }
+
+            .screen-content p {
+                font-size: 16px;
+            }
+
+            .screen-content .stat {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -226,15 +261,31 @@
                 </div>
             </div>
             
+            <!-- Name Input Screen -->
+            <div id="nameScreen" class="overlay-screen" style="display: none;">
+                <div class="screen-content">
+                    <h1>Enter Your Name</h1>
+                    <p>Choose a name to save your score:</p>
+                    <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="20">
+                    <br>
+                    <button id="submitNameButton" class="btn btn-start">Submit</button>
+                </div>
+            </div>
+            
             <!-- Game Over Screen -->
             <div id="gameOverScreen" class="overlay-screen" style="display: none;">
                 <div class="screen-content">
                     <h1>Game Over!</h1>
-                    <p class="stat">High Score: <span id="finalHighScore">0</span></p>
-                    <p class="stat">Score: <span id="finalScore">0</span></p>
-                    <p class="stat">Coins: <span id="finalCoins">0</span></p>
-                    <p class="stat">Rank: <span id="finalRank">Calculating...</span></p>
-                    <button id="restartButton" class="btn btn-restart">Play Again</button>
+                    <p class="stat">Your Score: <span id="finalScore">0</span></p>
+                    <p class="stat">Your Rank: <span id="finalRank">Calculating...</span></p>
+                    <p class="stat">Top Today: <span id="topToday">Loading...</span></p>
+                    <p class="stat">All-Time Top: <span id="topAllTime">Loading...</span></p>
+                    <p class="stat">You are in the top <span id="percentile">...</span>% of players</p>
+                    <p class="stat">Coins Collected: <span id="finalCoins">0</span></p>
+                    <div>
+                        <button id="copyButton" class="btn btn-copy">📋 Copy Result</button>
+                        <button id="restartButton" class="btn btn-restart">Play Again</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -252,7 +303,25 @@
         <div id="rightButton" class="touch-button">RIGHT ▶</div>
     </div>
     
-    <script>
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBic7ZeUQDgPZqORn0t6-wUCGHfEPASE10",
+            authDomain: "topseat-d1d5d.firebaseapp.com",
+            projectId: "topseat-d1d5d",
+            storageBucket: "topseat-d1d5d.firebasestorage.app",
+            messagingSenderId: "770306321288",
+            appId: "1:770306321288:web:0e768acffc4d189672283d"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // Game constants
         const PLAYER_SIZE = 30;
         const HITBOX_SIZE = 20;
@@ -276,111 +345,43 @@
         let lastSpawnY = 0;
         let keysPressed = { left: false, right: false };
         let gameLoopInterval = null;
-        let globalHighScore = 0;
-        let rank = null;
-        let storageLoadedRef = false;
+        let playerName = localStorage.getItem('playerName') || '';
 
         // Get DOM elements
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const introScreen = document.getElementById('introScreen');
+        const nameScreen = document.getElementById('nameScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const startButton = document.getElementById('startButton');
+        const submitNameButton = document.getElementById('submitNameButton');
+        const playerNameInput = document.getElementById('playerNameInput');
         const restartButton = document.getElementById('restartButton');
+        const copyButton = document.getElementById('copyButton');
         const scoreDisplay = document.getElementById('score');
         const coinsDisplay = document.getElementById('coins');
         const finalScoreDisplay = document.getElementById('finalScore');
         const finalCoinsDisplay = document.getElementById('finalCoins');
-        const finalHighScoreDisplay = document.getElementById('finalHighScore');
         const finalRankDisplay = document.getElementById('finalRank');
+        const topTodayDisplay = document.getElementById('topToday');
+        const topAllTimeDisplay = document.getElementById('topAllTime');
+        const percentileDisplay = document.getElementById('percentile');
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
 
-        // Load high score from localStorage and storage
-        async function loadHighScore() {
+        // Load high score from localStorage
+        function loadHighScore() {
             const saved = localStorage.getItem('highScore');
             if (saved) {
                 highScore = parseInt(saved);
             }
-            
-            // Load scores from persistent storage
-            if (!storageLoadedRef && typeof window.storage !== 'undefined') {
-                storageLoadedRef = true;
-                try {
-                    // Load personal high score
-                    const personalScore = await window.storage.get('personal-high-score');
-                    if (personalScore) {
-                        const storageScore = parseInt(personalScore.value);
-                        if (storageScore > highScore) {
-                            highScore = storageScore;
-                            localStorage.setItem('highScore', highScore.toString());
-                        }
-                    }
-
-                    // Load global high score
-                    const globalScore = await window.storage.get('global-high-score', true);
-                    if (globalScore) {
-                        globalHighScore = parseInt(globalScore.value);
-                    }
-                } catch (error) {
-                    console.log('No previous scores found in storage');
-                }
-            }
         }
 
-        // Save high score to localStorage and storage
-        async function saveHighScore() {
+        // Save high score to localStorage
+        function saveHighScore() {
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore.toString());
-                
-                // Save to persistent storage if available
-                if (typeof window.storage !== 'undefined') {
-                    try {
-                        await window.storage.set('personal-high-score', score.toString());
-                    } catch (error) {
-                        console.error('Failed to save high score:', error);
-                    }
-                }
-            }
-
-            // Update global high score if needed
-            if (typeof window.storage !== 'undefined' && score > globalHighScore) {
-                globalHighScore = score;
-                try {
-                    await window.storage.set('global-high-score', score.toString(), true);
-                } catch (error) {
-                    console.error('Failed to save global high score:', error);
-                }
-            }
-        }
-
-        // Calculate rank
-        async function calculateRank() {
-            if (typeof window.storage === 'undefined') {
-                rank = 1;
-                return;
-            }
-
-            try {
-                const allScoresKeys = await window.storage.list('personal-high-score', false);
-                const scores = [];
-                
-                for (const key of allScoresKeys.keys) {
-                    try {
-                        const result = await window.storage.get(key);
-                        if (result) {
-                            scores.push(parseInt(result.value));
-                        }
-                    } catch (e) {
-                        // Skip invalid entries
-                    }
-                }
-                
-                scores.sort((a, b) => b - a);
-                const userRank = scores.findIndex(s => s <= Math.max(score, highScore)) + 1;
-                rank = userRank || scores.length + 1;
-            } catch (error) {
-                console.error('Failed to calculate rank:', error);
-                rank = 1;
             }
         }
 
@@ -388,8 +389,34 @@
         function startGame() {
             showIntro = false;
             introScreen.style.display = 'none';
-            gameLoop();
+            
+            // Check if player has a name
+            if (!playerName) {
+                nameScreen.style.display = 'flex';
+            } else {
+                gameLoop();
+            }
         }
+
+        // Submit name
+        submitNameButton.addEventListener('click', () => {
+            const name = playerNameInput.value.trim();
+            if (name) {
+                playerName = name;
+                localStorage.setItem('playerName', playerName);
+                nameScreen.style.display = 'none';
+                gameLoop();
+            } else {
+                alert('Please enter a name!');
+            }
+        });
+
+        // Allow Enter key to submit name
+        playerNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitNameButton.click();
+            }
+        });
 
         // Restart game
         function restartGame() {
@@ -409,6 +436,91 @@
             
             gameLoop();
         }
+
+        // Save score to Firestore and get global stats
+        async function saveScoreAndGetStats() {
+            try {
+                // Save score to Firestore
+                await addDoc(collection(db, 'scores'), {
+                    name: playerName,
+                    score: score,
+                    createdAt: Timestamp.now()
+                });
+
+                // Get all scores for ranking
+                const allScoresQuery = query(
+                    collection(db, 'scores'),
+                    orderBy('score', 'desc')
+                );
+                const allScoresSnapshot = await getDocs(allScoresQuery);
+                const allScores = allScoresSnapshot.docs.map(doc => doc.data().score);
+                
+                // Calculate rank (number of scores strictly greater + 1)
+                const rank = allScores.filter(s => s > score).length + 1;
+                const totalPlayers = allScores.length;
+                const percentile = ((rank / totalPlayers) * 100).toFixed(1);
+
+                // Get today's top score
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayTimestamp = Timestamp.fromDate(today);
+                
+                const todayQuery = query(
+                    collection(db, 'scores'),
+                    where('createdAt', '>=', todayTimestamp),
+                    orderBy('createdAt', 'desc'),
+                    orderBy('score', 'desc'),
+                    limit(1)
+                );
+                const todaySnapshot = await getDocs(todayQuery);
+                const topToday = todaySnapshot.empty ? score : Math.max(score, todaySnapshot.docs[0].data().score);
+
+                // Get all-time top score
+                const allTimeQuery = query(
+                    collection(db, 'scores'),
+                    orderBy('score', 'desc'),
+                    limit(1)
+                );
+                const allTimeSnapshot = await getDocs(allTimeQuery);
+                const topAllTime = allTimeSnapshot.empty ? score : Math.max(score, allTimeSnapshot.docs[0].data().score);
+
+                return {
+                    rank,
+                    totalPlayers,
+                    percentile,
+                    topToday,
+                    topAllTime
+                };
+            } catch (error) {
+                console.error('Error saving score:', error);
+                return {
+                    rank: 1,
+                    totalPlayers: 1,
+                    percentile: 100,
+                    topToday: score,
+                    topAllTime: score
+                };
+            }
+        }
+
+        // Copy result to clipboard
+        async function copyResult() {
+            const rank = finalRankDisplay.textContent;
+            const percentile = percentileDisplay.textContent;
+            const shareText = `Sky Fall – Score: ${score}, Rank: ${rank}, Top ${percentile}% – Play: https://kamwed.github.io/Falling-Game/`;
+            
+            try {
+                await navigator.clipboard.writeText(shareText);
+                copyButton.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    copyButton.textContent = '📋 Copy Result';
+                }, 2000);
+            } catch (err) {
+                alert('Share text: ' + shareText);
+            }
+        }
+
+        copyButton.addEventListener('click', copyResult);
 
         // Draw stick figure player
         function drawPlayer() {
@@ -563,19 +675,23 @@
         // End game
         async function endGame() {
             gameOver = true;
-            await saveHighScore();
-            await calculateRank();
+            saveHighScore();
             
             finalScoreDisplay.textContent = score;
             finalCoinsDisplay.textContent = currency;
-            finalHighScoreDisplay.textContent = highScore;
-            finalRankDisplay.textContent = rank ? `#${rank}` : 'Calculating...';
             
             gameOverScreen.style.display = 'flex';
             
             if (gameLoopInterval) {
                 clearInterval(gameLoopInterval);
             }
+
+            // Save score and get stats from Firestore
+            const stats = await saveScoreAndGetStats();
+            finalRankDisplay.textContent = `#${stats.rank}`;
+            topTodayDisplay.textContent = stats.topToday;
+            topAllTimeDisplay.textContent = stats.topAllTime;
+            percentileDisplay.textContent = stats.percentile;
         }
 
         // Render game
