@@ -431,7 +431,7 @@
         }
 
         // Start game
-        function startGame() {
+        async function startGame() {
             showIntro = false;
             introScreen.style.display = 'none';
             
@@ -439,6 +439,7 @@
             if (!playerName) {
                 nameScreen.style.display = 'flex';
             } else {
+                await updateCurrentRank();
                 gameLoop();
             }
         }
@@ -465,7 +466,7 @@
         });
 
         // Restart game
-        function restartGame() {
+        async function restartGame() {
             player = { x: 175, y: 100 };
             obstacles = [];
             coins = [];
