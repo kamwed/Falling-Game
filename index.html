@@ -299,7 +299,9 @@
                     <p>You've used all your attempts.</p>
                     <p class="stat">Your High Score: <span id="noAttemptsHighScore">0</span></p>
                     <p class="stat">Your Rank: <span id="noAttemptsRank">#-</span></p>
-                    <p style="margin-top: 20px;">Come back later for more attempts!</p>
+                    <p style="margin-top: 20px; font-size: 24px; font-weight: bold;">Next reset in:</p>
+                    <p id="countdown" style="font-size: 36px; font-weight: bold; margin: 10px 0;">--:--:--</p>
+                    <p style="margin-top: 10px;">Your attempts will refresh when the timer reaches zero!</p>
                 </div>
             </div>
         </div>
@@ -362,6 +364,8 @@
         let playerName = localStorage.getItem('playerName') || '';
         let currentRank = null;
         let attemptsRemaining = parseInt(localStorage.getItem('attemptsRemaining')) || 1;
+        let resetTime = localStorage.getItem('resetTime') || null;
+        let countdownInterval = null;
 
         // Get DOM elements
         const canvas = document.getElementById('gameCanvas');
@@ -386,15 +390,88 @@
         const finalAttemptsDisplay = document.getElementById('finalAttempts');
         const noAttemptsHighScore = document.getElementById('noAttemptsHighScore');
         const noAttemptsRank = document.getElementById('noAttemptsRank');
+        const countdownDisplay = document.getElementById('countdown');
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
+        // Check if attempts should be reset (24 hours have passed)
+        function checkAttemptsReset() {
+            if (!resetTime) {
+                // First time - set reset time to 24 hours from now
+                const now = new Date();
+                const reset = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                resetTime = reset.toISOString();
+                localStorage.setItem('resetTime', resetTime);
+                return;
+            }
+            
+            const now = new Date();
+            const reset = new Date(resetTime);
+            
+            if (now >= reset) {
+                // 24 hours have passed - reset attempts
+                attemptsRemaining = 1;
+                localStorage.setItem('attemptsRemaining', '1');
+                
+                // Set next reset time
+                const nextReset = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                resetTime = nextReset.toISOString();
+                localStorage.setItem('resetTime', resetTime);
+                
+                attemptsDisplay.textContent = attemptsRemaining;
+                
+                // If on no attempts screen, hide it
+                if (noAttemptsScreen.style.display === 'flex') {
+                    noAttemptsScreen.style.display = 'none';
+                    introScreen.style.display = 'flex';
+                }
+            }
+        }
+
+        // Update countdown timer
+        function updateCountdown() {
+            if (!resetTime) return;
+            
+            const now = new Date();
+            const reset = new Date(resetTime);
+            const diff = reset - now;
+            
+            if (diff <= 0) {
+                checkAttemptsReset();
+                if (countdownDisplay) {
+                    countdownDisplay.textContent = '00:00:00';
+                }
+                return;
+            }
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            if (countdownDisplay) {
+                countdownDisplay.textContent = timeString;
+            }
+        }
+
+        // Start countdown timer
+        function startCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
         // Load high score from localStorage and fetch current rank
         async function loadHighScore() {
             const saved = localStorage.getItem('highScore');
             if (saved) {
                 highScore = parseInt(saved);
             }
+            
+            // Check if attempts should be reset
+            checkAttemptsReset();
             
             // Update attempts display
             attemptsDisplay.textContent = attemptsRemaining;
@@ -458,6 +535,9 @@
 
         // Start game
         async function startGame() {
+            // Check if attempts need to be reset first
+            checkAttemptsReset();
+            
             // Check if player has attempts remaining
             if (attemptsRemaining <= 0) {
                 showIntro = false;
@@ -467,6 +547,7 @@
                 if (currentRank) {
                     noAttemptsRank.textContent = `#${currentRank}`;
                 }
+                startCountdown();
                 return;
             }
             
@@ -505,6 +586,9 @@
 
         // Restart game
         async function restartGame() {
+            // Check if attempts need to be reset first
+            checkAttemptsReset();
+            
             // Check if player has attempts remaining
             if (attemptsRemaining <= 0) {
                 gameOverScreen.style.display = 'none';
@@ -513,6 +597,7 @@
                 if (currentRank) {
                     noAttemptsRank.textContent = `#${currentRank}`;
                 }
+                startCountdown();
                 return;
             }
             
