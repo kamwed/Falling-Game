@@ -248,7 +248,7 @@
             <div class="score-item">Score: <span id="score">0</span></div>
             <div class="score-item">Rank: <span id="currentRank">#-</span></div>
             <div class="score-item">Coins: <span id="coins">0</span></div>
-            <div class="score-item">Attempts: <span id="attempts">1</span></div>
+            <div class="score-item">Attempts: <span id="attempts">0/1</span></div>
         </div>
         
         <div class="game-canvas-wrapper">
@@ -268,11 +268,14 @@
             <!-- Name Input Screen -->
             <div id="nameScreen" class="overlay-screen" style="display: none;">
                 <div class="screen-content">
-                    <h1>Enter Your Name</h1>
-                    <p>Choose a name to save your score:</p>
+                    <h1>Enter Your Details</h1>
+                    <p>Enter your email and name to play:</p>
+                    <input type="email" id="playerEmailInput" placeholder="Enter your email" maxlength="100">
+                    <br>
                     <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="20">
                     <br>
                     <button id="submitNameButton" class="btn btn-start">Submit</button>
+                    <p id="emailError" style="color: #ff6b6b; margin-top: 10px; display: none;">Please enter a valid email address</p>
                 </div>
             </div>
             
@@ -284,7 +287,7 @@
                     <p class="stat">High Score: <span id="finalHighScore">0</span></p>
                     <p class="stat">Your Rank: <span id="finalRank">Calculating...</span></p>
                     <p class="stat">Coins Collected: <span id="finalCoins">0</span></p>
-                    <p class="stat">Attempts Remaining: <span id="finalAttempts">1</span></p>
+                    <p class="stat">Attempts Used Today: <span id="finalAttempts">1/1</span></p>
                     <div>
                         <button id="copyButton" class="btn btn-copy">📋 Copy Result</button>
                         <button id="restartButton" class="btn btn-restart">Play Again</button>
@@ -322,7 +325,7 @@
     <script type="module">
         // Import Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, doc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, doc, setDoc, getDoc, runTransaction, Timestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -347,6 +350,7 @@
         const COIN_SIZE = 20;
         const GAME_WIDTH = 400;
         const GAME_HEIGHT = 600;
+        const MAX_ATTEMPTS_PER_DAY = 1; // Change this to adjust daily attempt limit
 
         // Game state
         let player = { x: 175, y: 100 };
@@ -362,8 +366,10 @@
         let keysPressed = { left: false, right: false };
         let gameLoopInterval = null;
         let playerName = localStorage.getItem('playerName') || '';
+        let playerEmail = localStorage.getItem('playerEmail') || '';
         let currentRank = null;
         let attemptsRemaining = localStorage.getItem('attemptsRemaining') !== null ? parseInt(localStorage.getItem('attemptsRemaining')) : 1;
+        let attemptsUsedToday = 0;
         let resetTime = localStorage.getItem('resetTime') || null;
         let countdownInterval = null;
 
@@ -376,7 +382,9 @@
         const noAttemptsScreen = document.getElementById('noAttemptsScreen');
         const startButton = document.getElementById('startButton');
         const submitNameButton = document.getElementById('submitNameButton');
+        const playerEmailInput = document.getElementById('playerEmailInput');
         const playerNameInput = document.getElementById('playerNameInput');
+        const emailError = document.getElementById('emailError');
         const restartButton = document.getElementById('restartButton');
         const copyButton = document.getElementById('copyButton');
         const scoreDisplay = document.getElementById('score');
@@ -394,53 +402,115 @@
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
-        // Check if attempts should be reset (24 hours have passed)
-        function checkAttemptsReset() {
-            if (!resetTime) {
-                // First time - set reset time to 24 hours from now
-                const now = new Date();
-                const reset = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                resetTime = reset.toISOString();
-                localStorage.setItem('resetTime', resetTime);
-                return;
+        // Get today's date key (UTC)
+        function getTodayDateKey() {
+            const now = new Date();
+            const year = now.getUTCFullYear();
+            const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(now.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Get attempts from Firestore for today
+        async function getAttemptsToday() {
+            if (!playerEmail) return 0;
+            
+            try {
+                const dateKey = getTodayDateKey();
+                const attemptsRef = doc(db, 'attempts', `${playerEmail}_${dateKey}`);
+                const attemptsDoc = await getDoc(attemptsRef);
+                
+                if (attemptsDoc.exists()) {
+                    return attemptsDoc.data().count || 0;
+                }
+                return 0;
+            } catch (error) {
+                console.error('Error getting attempts:', error);
+                return 0;
+            }
+        }
+
+        // Increment attempts in Firestore (transaction)
+        async function incrementAttempts() {
+            if (!playerEmail) {
+                throw new Error('No email set');
             }
             
-            const now = new Date();
-            const reset = new Date(resetTime);
+            const dateKey = getTodayDateKey();
+            const attemptsRef = doc(db, 'attempts', `${playerEmail}_${dateKey}`);
             
-            if (now >= reset) {
-                // 24 hours have passed - reset attempts
-                attemptsRemaining = 1;
-                localStorage.setItem('attemptsRemaining', '1');
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const attemptsDoc = await transaction.get(attemptsRef);
+                    
+                    let currentCount = 0;
+                    if (attemptsDoc.exists()) {
+                        currentCount = attemptsDoc.data().count || 0;
+                    }
+                    
+                    if (currentCount >= MAX_ATTEMPTS_PER_DAY) {
+                        throw new Error('Maximum attempts reached');
+                    }
+                    
+                    const newCount = currentCount + 1;
+                    
+                    transaction.set(attemptsRef, {
+                        email: playerEmail,
+                        dateKey: dateKey,
+                        count: newCount,
+                        lastUpdated: Timestamp.now()
+                    });
+                    
+                    attemptsUsedToday = newCount;
+                });
                 
-                // Set next reset time
-                const nextReset = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                resetTime = nextReset.toISOString();
-                localStorage.setItem('resetTime', resetTime);
-                
-                attemptsDisplay.textContent = attemptsRemaining;
-                
-                // If on no attempts screen, hide it
-                if (noAttemptsScreen.style.display === 'flex') {
-                    noAttemptsScreen.style.display = 'none';
-                    introScreen.style.display = 'flex';
-                }
+                return true;
+            } catch (error) {
+                console.error('Error incrementing attempts:', error);
+                throw error;
+            }
+        }
+
+        // Validate email format
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+        // Calculate time until midnight UTC
+        function getTimeUntilMidnightUTC() {
+            const now = new Date();
+            const tomorrow = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate() + 1,
+                0, 0, 0, 0
+            ));
+            return tomorrow - now;
+        }
+
+        // Check if attempts should be reset (midnight UTC has passed)
+        function checkAttemptsReset() {
+            const savedDateKey = localStorage.getItem('lastDateKey');
+            const currentDateKey = getTodayDateKey();
+            
+            if (savedDateKey !== currentDateKey) {
+                // New day - attempts reset
+                localStorage.setItem('lastDateKey', currentDateKey);
+                attemptsUsedToday = 0;
             }
         }
 
         // Update countdown timer
         function updateCountdown() {
-            if (!resetTime) return;
-            
-            const now = new Date();
-            const reset = new Date(resetTime);
-            const diff = reset - now;
+            const diff = getTimeUntilMidnightUTC();
             
             if (diff <= 0) {
                 checkAttemptsReset();
                 if (countdownDisplay) {
                     countdownDisplay.textContent = '00:00:00';
                 }
+                // Refresh attempts
+                loadAttemptsData();
                 return;
             }
             
@@ -463,6 +533,18 @@
             updateCountdown();
             countdownInterval = setInterval(updateCountdown, 1000);
         }
+        // Load attempts data from Firestore
+        async function loadAttemptsData() {
+            if (!playerEmail) {
+                attemptsDisplay.textContent = '0/1';
+                return;
+            }
+            
+            checkAttemptsReset();
+            attemptsUsedToday = await getAttemptsToday();
+            attemptsDisplay.textContent = `${attemptsUsedToday}/${MAX_ATTEMPTS_PER_DAY}`;
+        }
+
         // Load high score from localStorage and fetch current rank
         async function loadHighScore() {
             const saved = localStorage.getItem('highScore');
@@ -470,25 +552,27 @@
                 highScore = parseInt(saved);
             }
             
-            // Check if attempts should be reset
-            checkAttemptsReset();
-            
-            // Update attempts display
-            attemptsDisplay.textContent = attemptsRemaining;
+            // Load attempts data
+            await loadAttemptsData();
             
             // Load current rank if player has a name
-            if (playerName) {
+            if (playerName && playerEmail) {
                 await updateCurrentRank();
             }
         }
 
         // Update current rank display
         async function updateCurrentRank() {
+            if (!playerEmail) {
+                currentRankDisplay.textContent = '#-';
+                return;
+            }
+            
             try {
                 // Get player's best score
                 const playerScoresQuery = query(
                     collection(db, 'scores'),
-                    where('name', '==', playerName)
+                    where('email', '==', playerEmail)
                 );
                 const playerScoresSnapshot = await getDocs(playerScoresQuery);
                 
@@ -535,11 +619,17 @@
 
         // Start game
         async function startGame() {
-            // Check if attempts need to be reset first
-            checkAttemptsReset();
+            // Check if email is set
+            if (!playerEmail) {
+                nameScreen.style.display = 'flex';
+                return;
+            }
+            
+            // Check attempts
+            await loadAttemptsData();
             
             // Check if player has attempts remaining
-            if (attemptsRemaining <= 0) {
+            if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
                 showIntro = false;
                 introScreen.style.display = 'none';
                 noAttemptsScreen.style.display = 'flex';
@@ -551,29 +641,62 @@
                 return;
             }
             
+            // Try to increment attempts in Firestore
+            try {
+                await incrementAttempts();
+                attemptsDisplay.textContent = `${attemptsUsedToday}/${MAX_ATTEMPTS_PER_DAY}`;
+            } catch (error) {
+                alert('Failed to start game: ' + error.message);
+                return;
+            }
+            
             showIntro = false;
             introScreen.style.display = 'none';
             
-            // Check if player has a name
-            if (!playerName) {
-                nameScreen.style.display = 'flex';
-            } else {
-                await updateCurrentRank();
-                gameLoop();
-            }
+            await updateCurrentRank();
+            gameLoop();
         }
 
-        // Submit name
+        // Submit name and email
         submitNameButton.addEventListener('click', async () => {
+            const email = playerEmailInput.value.trim();
             const name = playerNameInput.value.trim();
-            if (name) {
-                playerName = name;
-                localStorage.setItem('playerName', playerName);
-                nameScreen.style.display = 'none';
-                await updateCurrentRank();
-                gameLoop();
+            
+            emailError.style.display = 'none';
+            
+            if (!email || !isValidEmail(email)) {
+                emailError.textContent = 'Please enter a valid email address';
+                emailError.style.display = 'block';
+                return;
+            }
+            
+            if (!name) {
+                emailError.textContent = 'Please enter a name';
+                emailError.style.display = 'block';
+                return;
+            }
+            
+            playerEmail = email;
+            playerName = name;
+            localStorage.setItem('playerEmail', playerEmail);
+            localStorage.setItem('playerName', playerName);
+            
+            nameScreen.style.display = 'none';
+            
+            await loadAttemptsData();
+            await updateCurrentRank();
+            
+            // Check if they have attempts left
+            if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
+                noAttemptsScreen.style.display = 'flex';
+                noAttemptsHighScore.textContent = highScore;
+                if (currentRank) {
+                    noAttemptsRank.textContent = `#${currentRank}`;
+                }
+                startCountdown();
             } else {
-                alert('Please enter a name!');
+                // Start the game
+                await startGame();
             }
         });
 
@@ -583,14 +706,27 @@
                 submitNameButton.click();
             }
         });
+        
+        playerEmailInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitNameButton.click();
+            }
+        });
 
         // Restart game
         async function restartGame() {
-            // Check if attempts need to be reset first
-            checkAttemptsReset();
+            // Check if email is set
+            if (!playerEmail) {
+                gameOverScreen.style.display = 'none';
+                nameScreen.style.display = 'flex';
+                return;
+            }
+            
+            // Check attempts
+            await loadAttemptsData();
             
             // Check if player has attempts remaining
-            if (attemptsRemaining <= 0) {
+            if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
                 gameOverScreen.style.display = 'none';
                 noAttemptsScreen.style.display = 'flex';
                 noAttemptsHighScore.textContent = highScore;
@@ -598,6 +734,15 @@
                     noAttemptsRank.textContent = `#${currentRank}`;
                 }
                 startCountdown();
+                return;
+            }
+            
+            // Try to increment attempts in Firestore
+            try {
+                await incrementAttempts();
+                attemptsDisplay.textContent = `${attemptsUsedToday}/${MAX_ATTEMPTS_PER_DAY}`;
+            } catch (error) {
+                alert('Failed to start game: ' + error.message);
                 return;
             }
             
@@ -622,12 +767,12 @@
         // Save score to Firestore and get global stats
         async function saveScoreAndGetStats() {
             try {
-                console.log('Saving score to Firestore...', { name: playerName, score });
+                console.log('Saving score to Firestore...', { email: playerEmail, name: playerName, score });
                 
                 // Get player's existing scores
                 const playerScoresQuery = query(
                     collection(db, 'scores'),
-                    where('name', '==', playerName)
+                    where('email', '==', playerEmail)
                 );
                 const playerScoresSnapshot = await getDocs(playerScoresQuery);
                 
@@ -654,6 +799,7 @@
                         // Update existing document
                         const docRef = doc(db, 'scores', existingDocId);
                         await setDoc(docRef, {
+                            email: playerEmail,
                             name: playerName,
                             score: score,
                             createdAt: Timestamp.now()
@@ -662,6 +808,7 @@
                     } else {
                         // Create new document for new player
                         const docRef = await addDoc(collection(db, 'scores'), {
+                            email: playerEmail,
                             name: playerName,
                             score: score,
                             createdAt: Timestamp.now()
@@ -884,15 +1031,10 @@
             gameOver = true;
             saveHighScore();
             
-            // Decrease attempts
-            attemptsRemaining--;
-            localStorage.setItem('attemptsRemaining', attemptsRemaining.toString());
-            attemptsDisplay.textContent = attemptsRemaining;
-            
             finalScoreDisplay.textContent = score;
             finalHighScoreDisplay.textContent = highScore;
             finalCoinsDisplay.textContent = currency;
-            finalAttemptsDisplay.textContent = attemptsRemaining;
+            finalAttemptsDisplay.textContent = `${attemptsUsedToday}/${MAX_ATTEMPTS_PER_DAY}`;
             
             gameOverScreen.style.display = 'flex';
             
