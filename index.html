@@ -339,6 +339,7 @@
 <body>
     <div class="game-container">
         <div class="score-display">
+            <div class="score-item">Level: <span id="level">1</span></div>
             <div class="score-item">Score: <span id="score">0</span></div>
             <div class="score-item">Rank: <span id="currentRank">#-</span></div>
             <div class="score-item">Coins: <span id="coins">0</span></div>
@@ -386,6 +387,17 @@
                         <button id="copyButton" class="btn btn-copy">📋 Copy Result</button>
                         <button id="restartButton" class="btn btn-restart">Play Again</button>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Level Complete Screen -->
+            <div id="levelCompleteScreen" class="overlay-screen" style="display: none;">
+                <div class="screen-content">
+                    <h1>Level Complete!</h1>
+                    <p class="stat">Level Score: <span id="levelScore">0</span></p>
+                    <p class="stat">Coins Collected: <span id="levelCoins">0</span></p>
+                    <p class="stat">Total Score: <span id="totalScore">0</span></p>
+                    <button id="continueButton" class="btn btn-start">Continue to Next Level</button>
                 </div>
             </div>
             
@@ -482,6 +494,8 @@
         const GAME_WIDTH = 400;
         const GAME_HEIGHT = 600;
         const MAX_ATTEMPTS_PER_DAY = 100; // Change this to adjust daily attempt limit
+        const GRASS_HEIGHT = 40;
+        const LEVEL_COMPLETE_SCORE = 500; // Score needed to complete a level
 
         // Game state
         let player = { x: 175, y: 100 };
@@ -489,7 +503,9 @@
         let coins = [];
         let score = 0;
         let currency = 0;
+        let currentLevel = 1;
         let gameOver = false;
+        let levelComplete = false;
         let showIntro = true;
         let cameraY = 0;
         let highScore = 0;
@@ -514,6 +530,7 @@
         const introScreen = document.getElementById('introScreen');
         const nameScreen = document.getElementById('nameScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
+        const levelCompleteScreen = document.getElementById('levelCompleteScreen');
         const noAttemptsScreen = document.getElementById('noAttemptsScreen');
         const startButton = document.getElementById('startButton');
         const submitNameButton = document.getElementById('submitNameButton');
@@ -521,7 +538,9 @@
         const playerNameInput = document.getElementById('playerNameInput');
         const emailError = document.getElementById('emailError');
         const restartButton = document.getElementById('restartButton');
+        const continueButton = document.getElementById('continueButton');
         const copyButton = document.getElementById('copyButton');
+        const levelDisplay = document.getElementById('level');
         const scoreDisplay = document.getElementById('score');
         const currentRankDisplay = document.getElementById('currentRank');
         const coinsDisplay = document.getElementById('coins');
@@ -531,6 +550,9 @@
         const finalCoinsDisplay = document.getElementById('finalCoins');
         const finalRankDisplay = document.getElementById('finalRank');
         const finalAttemptsDisplay = document.getElementById('finalAttempts');
+        const levelScoreDisplay = document.getElementById('levelScore');
+        const levelCoinsDisplay = document.getElementById('levelCoins');
+        const totalScoreDisplay = document.getElementById('totalScore');
         const noAttemptsHighScore = document.getElementById('noAttemptsHighScore');
         const noAttemptsRank = document.getElementById('noAttemptsRank');
         const countdownDisplay = document.getElementById('countdown');
@@ -1185,11 +1207,14 @@
             coins = [];
             score = 0;
             currency = 0;
+            currentLevel = 1;
+            levelComplete = false;
             cameraY = 0;
             lastSpawnY = 0;
             gameOver = false;
             keysPressed = { left: false, right: false };
             
+            levelDisplay.textContent = '1';
             scoreDisplay.textContent = '0';
             coinsDisplay.textContent = '0';
             
@@ -1384,7 +1409,13 @@
 
         // Update game state
         function update() {
-            if (gameOver || showIntro) return;
+            if (gameOver || showIntro || levelComplete) return;
+            
+            // Check if level is complete
+            if (score >= LEVEL_COMPLETE_SCORE) {
+                completeLevelSuccess();
+                return;
+            }
             
             // Move player down
             player.y += 2;
@@ -1463,6 +1494,36 @@
             });
         }
 
+        // Complete level successfully
+        function completeLevelSuccess() {
+            levelComplete = true;
+            
+            // Stop the game loop
+            if (gameLoopInterval) {
+                clearInterval(gameLoopInterval);
+            }
+            
+            // Position player on the grass
+            player.y = GAME_HEIGHT - GRASS_HEIGHT - PLAYER_SIZE;
+            cameraY = player.y - (GAME_HEIGHT / 2);
+            
+            // Clear obstacles and coins for clean landing
+            obstacles = [];
+            coins = [];
+            
+            // Render one final time to show player on grass
+            render();
+            
+            // Hide touch controls
+            touchControls.classList.remove('active');
+            
+            // Show level complete screen
+            levelScoreDisplay.textContent = score;
+            levelCoinsDisplay.textContent = currency;
+            totalScoreDisplay.textContent = score; // For now, same as level score
+            levelCompleteScreen.style.display = 'flex';
+        }
+
         // End game
         async function endGame() {
             gameOver = true;
@@ -1501,10 +1562,42 @@
             ctx.fillStyle = '#7dd3fc';
             ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
             
+            // Draw grass at bottom if level is complete
+            if (levelComplete) {
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(0, GAME_HEIGHT - GRASS_HEIGHT, GAME_WIDTH, GRASS_HEIGHT);
+                
+                // Draw darker grass line at top
+                ctx.fillStyle = '#16a34a';
+                ctx.fillRect(0, GAME_HEIGHT - GRASS_HEIGHT, GAME_WIDTH, 3);
+            }
+            
             // Draw game objects
             drawObstacles();
             drawCoins();
             drawPlayer();
+        }
+
+        // Continue to next level
+        function continueToNextLevel() {
+            // Hide level complete screen
+            levelCompleteScreen.style.display = 'none';
+            
+            // Reset level-specific state but keep score and currency
+            levelComplete = false;
+            player = { x: 175, y: 100 };
+            obstacles = [];
+            coins = [];
+            cameraY = 0;
+            lastSpawnY = 0;
+            keysPressed = { left: false, right: false };
+            
+            // Increment level (for now it just stays at 1, but ready for future)
+            // currentLevel += 1;
+            // levelDisplay.textContent = currentLevel;
+            
+            // Restart the game loop
+            gameLoop();
         }
 
         // Main game loop
@@ -1533,9 +1626,10 @@
         // Event listeners
         startButton.addEventListener('click', startGame);
         restartButton.addEventListener('click', restartGame);
+        continueButton.addEventListener('click', continueToNextLevel);
 
         document.addEventListener('keydown', (e) => {
-            if (gameOver || showIntro) return;
+            if (gameOver || showIntro || levelComplete) return;
             if (e.key === 'ArrowLeft') keysPressed.left = true;
             if (e.key === 'ArrowRight') keysPressed.right = true;
         });
