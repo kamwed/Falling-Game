@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prizes - Sky Fall Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(to bottom, #60a5fa, #2563eb);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .tagline {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #22c55e;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.2s;
+            margin-bottom: 30px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background: #16a34a;
+            transform: scale(1.05);
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            color: #1f2937;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 30px;
+            color: #2563eb;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #1e40af;
+        }
+
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .prize-box {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .prize-amount {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+        }
+
+        .prize-label {
+            font-size: 20px;
+            color: #78350f;
+            font-weight: bold;
+        }
+
+        .highlight-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .highlight-box p {
+            margin-bottom: 0;
+            color: #78350f;
+            font-weight: 500;
+        }
+
+        .rules-list {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .rules-list li {
+            margin-bottom: 15px;
+        }
+
+        strong {
+            color: #1e40af;
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 36px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .content {
+                padding: 25px;
+            }
+
+            p, li {
+                font-size: 16px;
+            }
+
+            .prize-amount {
+                font-size: 36px;
+            }
+
+            .prize-label {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎮 Sky Fall</div>
+            <div class="tagline">Compete for real cash prizes!</div>
+        </div>
+
+        <a href="index.html" class="back-button">⬅ Back to Game</a>
+
+        <div class="content">
+            <h1>🏆 Prizes</h1>
+
+            <div class="prize-box">
+                <div class="prize-amount">$50</div>
+                <div class="prize-label">#1 Leaderboard Prize</div>
+            </div>
+
+            <h2>How to Win</h2>
+            <p>Compete against players worldwide for a chance to win real cash! The prize system is designed to reward the most skilled and consistent player.</p>
+
+            <div class="rules-list">
+                <ul>
+                    <li><strong>Hold the #1 spot:</strong> You must achieve and maintain the highest score on the global leaderboard.</li>
+                    <li><strong>24-hour requirement:</strong> Your score must remain at the top for a full 24 consecutive hours without being beaten.</li>
+                    <li><strong>Timer resets:</strong> If another player beats your score before the 24-hour window ends, the countdown resets and the new leader starts their own 24-hour timer.</li>
+                </ul>
+            </div>
+
+            <h2>Payout Process</h2>
+            <p>To claim your prize, DM a screenshot of your score, rank, and the timer at 0. We will validate your score and send you your prize.</p>
+
+            <h2>Competition Rules</h2>
+            <ul>
+                <li>Only legitimate gameplay counts—any cheating or exploitation will result in disqualification.</li>
+                <li>One prize per 24-hour cycle—once a winner is determined, the next competition cycle begins.</li>
+                <li>You must have a verified email address to be eligible for prizes.</li>
+                <li>Players can win multiple times if they achieve the 24-hour hold requirement again in future cycles.</li>
+            </ul>
+
+            <p style="margin-top: 30px; font-size: 20px; font-weight: bold; text-align: center; color: #2563eb;">
+                Ready to compete? Good luck! 🎮
+            </p>
+
+            <div style="margin-top: 40px; text-align: center;">
+                <a href="index.html" class="back-button">Start Playing Now! 🏆</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
