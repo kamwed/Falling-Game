@@ -1070,6 +1070,9 @@
                 return;
             }
             
+            // Update level display to show current saved level
+            levelDisplay.textContent = currentLevel;
+            
             await updateCurrentRank();
             gameLoop();
         }
@@ -1134,6 +1137,9 @@
                 await loadAttemptsData();
                 await updateCurrentRank();
                 await loadUserBestScore();
+                
+                // Update level display to show saved progress
+                levelDisplay.textContent = currentLevel;
                 
                 // Check if they have attempts left BEFORE trying to start
                 if (attemptsUsedToday >= MAX_ATTEMPTS_PER_DAY) {
