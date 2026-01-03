@@ -446,6 +446,10 @@
             <div class="menu-item-icon">👤</div>
             <div class="menu-item-text">Profile</div>
         </div>
+        <div class="menu-item" id="menuPrizes">
+            <div class="menu-item-icon">🏆</div>
+            <div class="menu-item-text">Prizes</div>
+        </div>
         <div class="menu-item" id="menuShare">
             <div class="menu-item-icon">📤</div>
             <div class="menu-item-text">Share</div>
@@ -647,6 +651,7 @@
         const menuOverlay = document.getElementById('menuOverlay');
         const menuPanel = document.getElementById('menuPanel');
         const menuProfile = document.getElementById('menuProfile');
+        const menuPrizes = document.getElementById('menuPrizes');
         const menuShare = document.getElementById('menuShare');
         const menuLogin = document.getElementById('menuLogin');
         const menuHowToPlay = document.getElementById('menuHowToPlay');
@@ -691,6 +696,12 @@
             console.log('Profile clicked');
             closeMenu();
             // TODO: Implement profile screen
+        });
+
+        menuPrizes.addEventListener('click', () => {
+            console.log('Prizes clicked');
+            closeMenu();
+            // TODO: Implement prizes screen
         });
 
         menuShare.addEventListener('click', () => {
