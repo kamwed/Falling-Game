@@ -369,6 +369,8 @@
                     <br>
                     <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="20">
                     <br>
+                    <input type="text" id="referralCodeInput" placeholder="Friend's share code (optional)" maxlength="10" style="text-transform: uppercase;">
+                    <br>
                     <button id="submitNameButton" class="btn btn-start">Submit</button>
                     <p id="emailError" style="color: #ff6b6b; margin-top: 10px; display: none;">Please enter a valid email address</p>
                 </div>
@@ -737,6 +739,145 @@
             return `${year}-${month}-${day}`;
         }
 
+        // Generate a unique share code
+        function generateShareCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // Create or get user's share code
+        async function ensureUserShareCode(uid) {
+            try {
+                const userRef = doc(db, 'users', uid);
+                const userDoc = await getDoc(userRef);
+                
+                if (userDoc.exists() && userDoc.data().shareCode) {
+                    return userDoc.data().shareCode;
+                }
+                
+                // Generate a unique code
+                let shareCode = generateShareCode();
+                let isUnique = false;
+                let attempts = 0;
+                
+                while (!isUnique && attempts < 10) {
+                    const existingQuery = query(
+                        collection(db, 'users'),
+                        where('shareCode', '==', shareCode)
+                    );
+                    const existingDocs = await getDocs(existingQuery);
+                    
+                    if (existingDocs.empty) {
+                        isUnique = true;
+                    } else {
+                        shareCode = generateShareCode();
+                        attempts++;
+                    }
+                }
+                
+                // Save the share code
+                await setDoc(userRef, {
+                    uid: uid,
+                    shareCode: shareCode,
+                    bonusAttempts: 0,
+                    createdAt: Timestamp.now()
+                }, { merge: true });
+                
+                console.log('Generated share code:', shareCode);
+                return shareCode;
+            } catch (error) {
+                console.error('Error ensuring share code:', error);
+                return null;
+            }
+        }
+
+        // Get bonus attempts for user
+        async function getBonusAttempts(uid) {
+            try {
+                const userRef = doc(db, 'users', uid);
+                const userDoc = await getDoc(userRef);
+                
+                if (userDoc.exists()) {
+                    return userDoc.data().bonusAttempts || 0;
+                }
+                return 0;
+            } catch (error) {
+                console.error('Error getting bonus attempts:', error);
+                return 0;
+            }
+        }
+
+        // Process referral code when new user signs up
+        async function processReferralCode(newUserUid, referralCode) {
+            if (!referralCode || referralCode.trim() === '') {
+                return;
+            }
+            
+            try {
+                referralCode = referralCode.trim().toUpperCase();
+                console.log('Processing referral code:', referralCode);
+                
+                // Check if user already has a referredByCode (prevent changing it)
+                const newUserRef = doc(db, 'users', newUserUid);
+                const newUserDoc = await getDoc(newUserRef);
+                
+                if (newUserDoc.exists() && newUserDoc.data().referredByCode) {
+                    console.log('User already used a referral code');
+                    return;
+                }
+                
+                // Find the referrer by share code
+                const referrerQuery = query(
+                    collection(db, 'users'),
+                    where('shareCode', '==', referralCode)
+                );
+                const referrerDocs = await getDocs(referrerQuery);
+                
+                if (referrerDocs.empty) {
+                    console.log('Referral code not found');
+                    return;
+                }
+                
+                const referrerDoc = referrerDocs.docs[0];
+                const referrerUid = referrerDoc.data().uid;
+                
+                // Prevent self-referral
+                if (referrerUid === newUserUid) {
+                    console.log('Cannot refer yourself');
+                    return;
+                }
+                
+                // Award 5 bonus attempts to referrer using transaction
+                await runTransaction(db, async (transaction) => {
+                    const referrerRef = doc(db, 'users', referrerUid);
+                    const referrerSnapshot = await transaction.get(referrerRef);
+                    
+                    if (!referrerSnapshot.exists()) {
+                        throw new Error('Referrer not found');
+                    }
+                    
+                    const currentBonus = referrerSnapshot.data().bonusAttempts || 0;
+                    transaction.update(referrerRef, {
+                        bonusAttempts: currentBonus + 5
+                    });
+                    
+                    // Mark new user as referred
+                    transaction.update(newUserRef, {
+                        referredByCode: referralCode,
+                        referredAt: Timestamp.now()
+                    });
+                });
+                
+                console.log('✅ Referral successful! Awarded 5 bonus attempts to referrer');
+            } catch (error) {
+                console.error('Error processing referral:', error);
+            }
+        }
+
         // Get attempts from Firestore for today (check both UID and deviceId)
         async function getAttemptsToday() {
             if (!currentUser) return 0;
@@ -763,8 +904,14 @@
                     deviceCount = deviceAttemptsDoc.data().count || 0;
                 }
                 
-                // Return the maximum of the two (if either is maxed out, block play)
-                return Math.max(uidCount, deviceCount);
+                // Get bonus attempts
+                const bonusAttempts = await getBonusAttempts(currentUser.uid);
+                
+                // Return the maximum of the two (if either is maxed out, block play) minus bonus attempts
+                const usedAttempts = Math.max(uidCount, deviceCount);
+                const effectiveUsed = Math.max(0, usedAttempts - bonusAttempts);
+                
+                return effectiveUsed;
             } catch (error) {
                 console.error('Error getting attempts:', error);
                 return 0;
@@ -1138,6 +1285,7 @@
             
             const email = playerEmailInput.value.trim();
             const name = playerNameInput.value.trim();
+            const referralCode = document.getElementById('referralCodeInput').value.trim();
             
             emailError.style.display = 'none';
             
@@ -1160,6 +1308,8 @@
             try {
                 // Try to sign in first, if fails, create account
                 let userCredential;
+                let isNewUser = false;
+                
                 try {
                     // Use a simple password based on email for demo
                     // In production, you'd want proper password management
@@ -1172,6 +1322,7 @@
                         const password = 'skyfall_' + email;
                         userCredential = await createUserWithEmailAndPassword(auth, email, password);
                         console.log('Created new user');
+                        isNewUser = true;
                     } else {
                         throw signInError;
                     }
@@ -1182,6 +1333,14 @@
                 playerName = name;
                 localStorage.setItem('playerEmail', playerEmail);
                 localStorage.setItem('playerName', playerName);
+                
+                // Ensure user has a share code
+                await ensureUserShareCode(currentUser.uid);
+                
+                // Process referral code if this is a new user
+                if (isNewUser && referralCode) {
+                    await processReferralCode(currentUser.uid, referralCode);
+                }
                 
                 nameScreen.style.display = 'none';
                 submitNameButton.textContent = 'Submit';

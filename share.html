@@ -226,12 +226,13 @@
 
             <div id="scoreDisplay"></div>
 
-            <!-- Copy Link Section -->
+            <!-- Share Code Section -->
             <div class="share-section">
-                <div class="section-title">📋 Copy Game Link</div>
+                <div class="section-title">🎟️ Your Share Code</div>
+                <p style="font-size: 16px; margin-bottom: 15px; color: #4b5563;">Share this code with friends. When they sign up using your code, you get 5 bonus attempts!</p>
                 <div class="link-container">
-                    <input type="text" class="link-input" id="gameLink" value="https://skyfall.game" readonly>
-                    <button class="copy-button" id="copyButton">Copy Link</button>
+                    <input type="text" class="link-input" id="shareCode" value="Loading..." readonly>
+                    <button class="copy-button" id="copyCodeButton">Copy Code</button>
                 </div>
                 <div id="copyMessage" class="message"></div>
             </div>
@@ -252,7 +253,7 @@
     <script type="module">
         // Import Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
         // Firebase configuration
@@ -275,6 +276,7 @@
         const GAME_NAME = 'Sky Fall';
         
         let playerScore = null;
+        let shareCode = null;
         let currentUser = null;
 
         // Load player's best score
@@ -305,6 +307,26 @@
             }
         }
 
+        // Load user's share code
+        async function loadShareCode() {
+            if (!currentUser) {
+                return null;
+            }
+
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                
+                if (userDoc.exists() && userDoc.data().shareCode) {
+                    return userDoc.data().shareCode;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error loading share code:', error);
+                return null;
+            }
+        }
+
         // Display score badge
         function displayScore(score) {
             const scoreDisplay = document.getElementById('scoreDisplay');
@@ -313,30 +335,50 @@
             }
         }
 
-        // Get share text based on score
-        function getShareText() {
-            if (playerScore) {
-                return `My best score is ${playerScore.toLocaleString()} in ${GAME_NAME}. Think you can beat it?`;
+        // Display share code
+        function displayShareCode(code) {
+            const shareCodeInput = document.getElementById('shareCode');
+            if (code) {
+                shareCodeInput.value = code;
+            } else {
+                shareCodeInput.value = 'Not available';
             }
-            return `Try to beat my score in ${GAME_NAME}!`;
         }
 
-        // Copy link button
-        document.getElementById('copyButton').addEventListener('click', async () => {
-            const linkInput = document.getElementById('gameLink');
-            const copyButton = document.getElementById('copyButton');
+        // Get share text based on score
+        function getShareText() {
+            let text = `Join me on ${GAME_NAME}!`;
+            if (playerScore) {
+                text = `My best score is ${playerScore.toLocaleString()} in ${GAME_NAME}. Think you can beat it?`;
+            }
+            if (shareCode) {
+                text += ` Use my code ${shareCode} when you sign up to get 5 bonus attempts!`;
+            }
+            return text;
+        }
+
+        // Copy share code button
+        document.getElementById('copyCodeButton').addEventListener('click', async () => {
+            const shareCodeInput = document.getElementById('shareCode');
+            const copyButton = document.getElementById('copyCodeButton');
             const copyMessage = document.getElementById('copyMessage');
             
+            if (!shareCode) {
+                copyMessage.className = 'message info';
+                copyMessage.textContent = 'Share code not available. Please log in first.';
+                return;
+            }
+            
             try {
-                await navigator.clipboard.writeText(linkInput.value);
+                await navigator.clipboard.writeText(shareCode);
                 
                 copyButton.textContent = '✓ Copied!';
                 copyButton.classList.add('copied');
                 copyMessage.className = 'message success';
-                copyMessage.textContent = 'Link copied to clipboard!';
+                copyMessage.textContent = 'Share code copied to clipboard!';
                 
                 setTimeout(() => {
-                    copyButton.textContent = 'Copy Link';
+                    copyButton.textContent = 'Copy Code';
                     copyButton.classList.remove('copied');
                     copyMessage.className = 'message';
                     copyMessage.textContent = '';
@@ -344,7 +386,7 @@
             } catch (error) {
                 console.error('Copy failed:', error);
                 copyMessage.className = 'message info';
-                copyMessage.textContent = 'Please manually copy the link above.';
+                copyMessage.textContent = 'Please manually copy the code above.';
             }
         });
 
@@ -385,8 +427,12 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
+                shareCode = await loadShareCode();
                 playerScore = await loadPlayerScore();
+                displayShareCode(shareCode);
                 displayScore(playerScore);
+            } else {
+                displayShareCode(null);
             }
         });
     </script>
