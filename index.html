@@ -526,6 +526,47 @@
         let countdownInterval = null;
         let isAuthenticating = false;
 
+        // Load saved progress from localStorage
+        function loadProgress() {
+            const savedProgress = localStorage.getItem('gameProgress');
+            if (savedProgress) {
+                try {
+                    const progress = JSON.parse(savedProgress);
+                    currentLevel = progress.currentLevel || 1;
+                    
+                    // Calculate fallSpeed based on saved level
+                    // Speed increases 25% per level up to level 10
+                    fallSpeed = 2;
+                    for (let i = 2; i <= currentLevel && i <= 10; i++) {
+                        fallSpeed *= 1.25;
+                    }
+                    
+                    console.log('Loaded progress:', { currentLevel, fallSpeed });
+                } catch (error) {
+                    console.error('Error loading progress:', error);
+                }
+            }
+        }
+
+        // Save progress to localStorage
+        function saveProgress() {
+            const progress = {
+                currentLevel: currentLevel,
+                lastSaved: new Date().toISOString()
+            };
+            localStorage.setItem('gameProgress', JSON.stringify(progress));
+            console.log('Progress saved:', progress);
+        }
+
+        // Clear saved progress (used when starting fresh)
+        function clearProgress() {
+            localStorage.removeItem('gameProgress');
+            console.log('Progress cleared');
+        }
+
+        // Load progress on initialization
+        loadProgress();
+
         // Get DOM elements
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1218,6 +1259,9 @@
             gameOver = false;
             keysPressed = { left: false, right: false };
             
+            // Clear saved progress when starting fresh
+            clearProgress();
+            
             levelDisplay.textContent = '1';
             scoreDisplay.textContent = '0';
             coinsDisplay.textContent = '0';
@@ -1529,6 +1573,9 @@
             // Hide touch controls
             touchControls.classList.remove('active');
             
+            // Save progress - player has reached this level
+            saveProgress();
+            
             // Show level complete screen
             levelScoreDisplay.textContent = score;
             levelCoinsDisplay.textContent = currency;
@@ -1720,6 +1767,9 @@
                 currentUser = null;
             }
         });
+        
+        // Update level display with loaded progress
+        levelDisplay.textContent = currentLevel;
         
         loadHighScore();
         render();
