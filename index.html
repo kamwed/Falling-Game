@@ -495,7 +495,7 @@
         const GAME_HEIGHT = 600;
         const MAX_ATTEMPTS_PER_DAY = 100; // Change this to adjust daily attempt limit
         const GRASS_HEIGHT = 40;
-        const LEVEL_COMPLETE_SCORE = 500; // Score needed to complete a level
+        const LEVEL_COMPLETE_SCORE = 2500; // Score needed to complete a level
 
         // Game state
         let player = { x: 175, y: 100 };
@@ -1411,8 +1411,11 @@
         function update() {
             if (gameOver || showIntro || levelComplete) return;
             
-            // Check if level is complete
-            if (score >= LEVEL_COMPLETE_SCORE) {
+            // Calculate grass position in world space
+            const grassWorldY = LEVEL_COMPLETE_SCORE * 2; // Grass appears at the end distance
+            
+            // Check if player has reached the grass
+            if (player.y + PLAYER_SIZE >= grassWorldY) {
                 completeLevelSuccess();
                 return;
             }
@@ -1503,9 +1506,14 @@
                 clearInterval(gameLoopInterval);
             }
             
+            // Calculate grass position in world space
+            const grassWorldY = LEVEL_COMPLETE_SCORE * 2;
+            
             // Position player on the grass
-            player.y = GAME_HEIGHT - GRASS_HEIGHT - PLAYER_SIZE;
-            cameraY = player.y - (GAME_HEIGHT / 2);
+            player.y = grassWorldY - PLAYER_SIZE;
+            
+            // Adjust camera to show player on grass
+            cameraY = grassWorldY - GAME_HEIGHT + GRASS_HEIGHT + 100;
             
             // Clear obstacles and coins for clean landing
             obstacles = [];
@@ -1562,14 +1570,18 @@
             ctx.fillStyle = '#7dd3fc';
             ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
             
-            // Draw grass at bottom if level is complete
-            if (levelComplete) {
+            // Calculate grass position in world space
+            const grassWorldY = LEVEL_COMPLETE_SCORE * 2; // Grass appears at the end distance
+            const grassScreenY = grassWorldY - cameraY;
+            
+            // Draw grass if it's visible on screen
+            if (grassScreenY < GAME_HEIGHT && grassScreenY > -GRASS_HEIGHT) {
                 ctx.fillStyle = '#22c55e';
-                ctx.fillRect(0, GAME_HEIGHT - GRASS_HEIGHT, GAME_WIDTH, GRASS_HEIGHT);
+                ctx.fillRect(0, grassScreenY, GAME_WIDTH, GRASS_HEIGHT);
                 
                 // Draw darker grass line at top
                 ctx.fillStyle = '#16a34a';
-                ctx.fillRect(0, GAME_HEIGHT - GRASS_HEIGHT, GAME_WIDTH, 3);
+                ctx.fillRect(0, grassScreenY, GAME_WIDTH, 3);
             }
             
             // Draw game objects
