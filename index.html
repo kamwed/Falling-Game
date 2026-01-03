@@ -534,6 +534,7 @@
             }
             
             try {
+                console.log('Loading progress for user:', currentUser.uid);
                 const progressRef = doc(db, 'userProgress', currentUser.uid);
                 const progressDoc = await getDoc(progressRef);
                 
@@ -548,14 +549,14 @@
                         fallSpeed *= 1.25;
                     }
                     
-                    console.log('Loaded progress from Firestore:', { currentLevel, fallSpeed });
+                    console.log('✅ Loaded progress from Firestore:', { currentLevel, fallSpeed, rawData: progress });
                 } else {
-                    console.log('No saved progress found, starting at level 1');
+                    console.log('⚠️ No saved progress found in Firestore, starting at level 1');
                     currentLevel = 1;
                     fallSpeed = 2;
                 }
             } catch (error) {
-                console.error('Error loading progress from Firestore:', error);
+                console.error('❌ Error loading progress from Firestore:', error);
                 // Fallback to level 1 if there's an error
                 currentLevel = 1;
                 fallSpeed = 2;
@@ -565,11 +566,12 @@
         // Save progress to Firestore
         async function saveProgress() {
             if (!currentUser) {
-                console.log('No user authenticated, cannot save progress');
+                console.log('⚠️ No user authenticated, cannot save progress');
                 return;
             }
             
             try {
+                console.log('💾 Saving progress for user:', currentUser.uid, 'Level:', currentLevel);
                 const progressRef = doc(db, 'userProgress', currentUser.uid);
                 const progress = {
                     uid: currentUser.uid,
@@ -579,9 +581,9 @@
                 };
                 
                 await setDoc(progressRef, progress);
-                console.log('Progress saved to Firestore:', progress);
+                console.log('✅ Progress saved to Firestore successfully:', progress);
             } catch (error) {
-                console.error('Error saving progress to Firestore:', error);
+                console.error('❌ Error saving progress to Firestore:', error);
             }
         }
 
@@ -1069,6 +1071,9 @@
                 nameScreen.style.display = 'flex';
                 return;
             }
+            
+            // Load progress from Firestore before starting
+            await loadProgress();
             
             // Check attempts first
             await loadAttemptsData();
@@ -1691,7 +1696,7 @@
         }
 
         // Continue to next level
-        function continueToNextLevel() {
+        async function continueToNextLevel() {
             // Hide level complete screen
             levelCompleteScreen.style.display = 'none';
             
@@ -1703,6 +1708,9 @@
             if (currentLevel <= 10) {
                 fallSpeed *= 1.25;
             }
+            
+            // Save progress after incrementing level
+            await saveProgress();
             
             // Reset level-specific state but keep score and currency
             levelComplete = false;
