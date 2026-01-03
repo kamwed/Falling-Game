@@ -456,10 +456,6 @@
             <div class="menu-item-icon">📤</div>
             <div class="menu-item-text">Share</div>
         </div>
-        <div class="menu-item" id="menuLogin">
-            <div class="menu-item-icon">🔐</div>
-            <div class="menu-item-text">Login</div>
-        </div>
         <div class="menu-item" id="menuHowToPlay">
             <div class="menu-item-icon">❓</div>
             <div class="menu-item-text">How to Play</div>
@@ -655,7 +651,6 @@
         const menuProfile = document.getElementById('menuProfile');
         const menuPrizes = document.getElementById('menuPrizes');
         const menuShare = document.getElementById('menuShare');
-        const menuLogin = document.getElementById('menuLogin');
         const menuHowToPlay = document.getElementById('menuHowToPlay');
         const menuFeedback = document.getElementById('menuFeedback');
         const touchControls = document.querySelector('.touch-controls');
@@ -697,7 +692,7 @@
         menuProfile.addEventListener('click', () => {
             console.log('Profile clicked');
             closeMenu();
-            // TODO: Implement profile screen
+            window.location.href = 'login.html';
         });
 
         menuPrizes.addEventListener('click', () => {
@@ -710,12 +705,6 @@
             console.log('Share clicked');
             closeMenu();
             window.location.href = 'share.html';
-        });
-
-        menuLogin.addEventListener('click', () => {
-            console.log('Login clicked');
-            closeMenu();
-            window.location.href = 'login.html';
         });
 
         menuHowToPlay.addEventListener('click', () => {
