@@ -63,18 +63,31 @@ app.get('/health', (req, res) => {
 
 // Create checkout session
 app.post('/create-checkout-session', async (req, res) => {
+  console.log('=== CHECKOUT SESSION REQUEST RECEIVED ===');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('Request body:', JSON.stringify(req.body));
+  
   try {
     const { priceId, mode, userEmail } = req.body;
 
+    console.log('Parsed values:');
+    console.log('- priceId:', priceId);
+    console.log('- mode:', mode);
+    console.log('- userEmail:', userEmail);
+
     if (!priceId) {
+      console.error('❌ ERROR: Missing priceId');
       return res.status(400).json({ error: 'priceId is required' });
     }
 
     if (!userEmail) {
+      console.error('❌ ERROR: Missing userEmail');
       return res.status(400).json({ error: 'userEmail is required' });
     }
 
     const sessionMode = mode || 'payment';
+    console.log('✅ Validation passed. Creating Stripe session...');
+    console.log('Session mode:', sessionMode);
 
     const session = await stripe.checkout.sessions.create({
       mode: sessionMode,
@@ -95,13 +108,20 @@ app.post('/create-checkout-session', async (req, res) => {
       }
     });
 
+    console.log('✅ Stripe session created successfully!');
+    console.log('Session ID:', session.id);
+    console.log('Session URL:', session.url);
+
     res.json({
       id: session.id,
       url: session.url,
     });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ ERROR creating checkout session:', error.message);
+    console.error('Error type:', error.type);
+    console.error('Error code:', error.code);
+    console.error('Full error:', error);
+    res.status(400).json({ error: error.message });
   }
 });
 

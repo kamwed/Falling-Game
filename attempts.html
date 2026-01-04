@@ -433,6 +433,14 @@
         // Buy attempts pack
         window.buyAttemptsPack = async function(attempts, price) {
             try {
+                // Check if user is logged in
+                if (!currentUser) {
+                    showMessage('Please log in to purchase attempts', 'info');
+                    alert('Please log in or create an account to make a purchase.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
                 // Determine which price ID to use
                 let priceId;
                 if (attempts === 10) {
@@ -443,38 +451,72 @@
                     throw new Error('Invalid attempts pack');
                 }
 
+                console.log('Starting payment flow for:', attempts, 'attempts');
+                console.log('Using price ID:', priceId);
+                console.log('User:', currentUser.uid, currentUser.email);
+                
                 showMessage('Redirecting to checkout...', 'info');
 
                 // Call backend to create checkout session
+                console.log('Calling backend:', `${BACKEND_URL}/create-checkout-session`);
+                
                 const response = await fetch(`${BACKEND_URL}/create-checkout-session`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ priceId }),
+                    body: JSON.stringify({ 
+                        priceId,
+                        userEmail: currentUser.email
+                    }),
                 });
 
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Backend error response:', errorData);
+                    throw new Error(errorData.error || `Backend returned ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('Response data:', data);
 
                 if (data.url) {
+                    console.log('Redirecting to:', data.url);
                     // Redirect to Stripe Checkout
                     window.location.href = data.url;
                 } else {
+                    console.error('No URL in response:', data);
                     throw new Error('No checkout URL received');
                 }
             } catch (error) {
                 console.error('Payment error:', error);
-                showMessage('Payment failed, please try again.', 'info');
-                alert('Payment failed, please try again.');
+                showMessage(`Payment failed: ${error.message}`, 'info');
+                alert(`Payment failed: ${error.message}\n\nCheck the browser console for more details.`);
             }
         };
 
         // Buy Pro subscription
         window.buyProSubscription = async function(price) {
             try {
+                // Check if user is logged in
+                if (!currentUser) {
+                    showMessage('Please log in to subscribe', 'info');
+                    alert('Please log in or create an account to subscribe to Pro.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                console.log('Starting Pro subscription flow');
+                console.log('Using price ID:', PRICE_IDS.pro);
+                console.log('User:', currentUser.uid, currentUser.email);
+                
                 showMessage('Redirecting to checkout...', 'info');
 
                 // Call backend to create checkout session
+                console.log('Calling backend:', `${BACKEND_URL}/create-checkout-session`);
+                
                 const response = await fetch(`${BACKEND_URL}/create-checkout-session`, {
                     method: 'POST',
                     headers: {
@@ -482,22 +524,34 @@
                     },
                     body: JSON.stringify({ 
                         priceId: PRICE_IDS.pro,
-                        mode: 'subscription'
+                        mode: 'subscription',
+                        userEmail: currentUser.email
                     }),
                 });
 
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Backend error response:', errorData);
+                    throw new Error(errorData.error || `Backend returned ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('Response data:', data);
 
                 if (data.url) {
+                    console.log('Redirecting to:', data.url);
                     // Redirect to Stripe Checkout
                     window.location.href = data.url;
                 } else {
+                    console.error('No URL in response:', data);
                     throw new Error('No checkout URL received');
                 }
             } catch (error) {
                 console.error('Payment error:', error);
-                showMessage('Payment failed, please try again.', 'info');
-                alert('Payment failed, please try again.');
+                showMessage(`Payment failed: ${error.message}`, 'info');
+                alert(`Payment failed: ${error.message}\n\nCheck the browser console for more details.`);
             }
         };
 
