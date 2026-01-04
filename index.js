@@ -18,9 +18,9 @@ const PORT = process.env.PORT || 3000;
 
 // Price ID to product mapping
 const PRICE_MAPPINGS = {
-  'price_1SletDLPyAORHNqqeOJNrIIR': { type: 'attempts', amount: 10 },  // 10 attempts $0.99
-  'price_1SlevnLPyAORHNqqVbC789tB': { type: 'attempts', amount: 30 },  // 30 attempts $3.99
-  'price_1SleslLPyAORHNqqscTRj3T1': { type: 'subscription', plan: 'pro' }  // Pro subscription $5.99
+  'price_1SlzlbLPyAORHNqqW1GGqcPx': { type: 'attempts', amount: 10 },  // 10 attempts $0.99
+  'price_1SlzlnLPyAORHNqq9aX3UYRh': { type: 'attempts', amount: 30 },  // 30 attempts $3.99
+  'price_1Slzm1LPyAORHNqqIrYIhq2f': { type: 'subscription', plan: 'pro' }  // Pro subscription $5.99
 };
 
 // CORS middleware
