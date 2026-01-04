@@ -15,14 +15,17 @@ app.get('/health', (req, res) => {
 // Create Stripe checkout session
 app.post('/create-checkout-session', async (req, res) => {
   try {
-    const { priceId } = req.body;
+    const { priceId, mode } = req.body;
 
     if (!priceId) {
       return res.status(400).json({ error: 'priceId is required' });
     }
 
+    // Determine mode: 'subscription' for recurring, 'payment' for one-time
+    const sessionMode = mode || 'payment';
+
     const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
+      mode: sessionMode,
       line_items: [
         {
           price: priceId,

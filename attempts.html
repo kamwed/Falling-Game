@@ -420,16 +420,85 @@
             }
         }
 
-        // Placeholder: Buy attempts pack
-        window.buyAttemptsPack = function(attempts, price) {
-            showMessage(`🚧 Payments coming soon! You tried to purchase ${attempts} attempts for $${price}`, 'info');
-            console.log(`Purchase request: ${attempts} attempts for $${price}`);
+        // Backend URL
+        const BACKEND_URL = 'https://fallingman.onrender.com';
+
+        // Stripe Price IDs
+        const PRICE_IDS = {
+            attempts10: 'price_1SletDLPyAORHNqqeOJNrIIR',  // $0.99 - 10 attempts
+            attempts30: 'price_1SlevnLPyAORHNqqVbC789tB',  // $3.99 - 30 attempts
+            pro: 'price_1SleslLPyAORHNqqscTRj3T1'          // $5.99/month - Pro subscription
         };
 
-        // Placeholder: Buy Pro subscription
-        window.buyProSubscription = function(price) {
-            showMessage(`🚧 Payments coming soon! You tried to subscribe to SkyFall Pro for $${price}/month`, 'info');
-            console.log(`Subscription request: Pro for $${price}/month`);
+        // Buy attempts pack
+        window.buyAttemptsPack = async function(attempts, price) {
+            try {
+                // Determine which price ID to use
+                let priceId;
+                if (attempts === 10) {
+                    priceId = PRICE_IDS.attempts10;
+                } else if (attempts === 30) {
+                    priceId = PRICE_IDS.attempts30;
+                } else {
+                    throw new Error('Invalid attempts pack');
+                }
+
+                showMessage('Redirecting to checkout...', 'info');
+
+                // Call backend to create checkout session
+                const response = await fetch(`${BACKEND_URL}/create-checkout-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ priceId }),
+                });
+
+                const data = await response.json();
+
+                if (data.url) {
+                    // Redirect to Stripe Checkout
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('No checkout URL received');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                showMessage('Payment failed, please try again.', 'info');
+                alert('Payment failed, please try again.');
+            }
+        };
+
+        // Buy Pro subscription
+        window.buyProSubscription = async function(price) {
+            try {
+                showMessage('Redirecting to checkout...', 'info');
+
+                // Call backend to create checkout session
+                const response = await fetch(`${BACKEND_URL}/create-checkout-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        priceId: PRICE_IDS.pro,
+                        mode: 'subscription'
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.url) {
+                    // Redirect to Stripe Checkout
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('No checkout URL received');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                showMessage('Payment failed, please try again.', 'info');
+                alert('Payment failed, please try again.');
+            }
         };
 
         // Initialize
