@@ -213,51 +213,117 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
-    console.error('Webhook error:', err.message);
+    console.error('⚠️ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  console.log('Webhook event:', event.type);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🔔 WEBHOOK EVENT RECEIVED:', event.type);
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
+        console.log('💳 Processing successful payment...');
+        
         const session = event.data.object;
+        console.log('Session ID:', session.id);
+        console.log('Payment status:', session.payment_status);
+        
         const userEmail = session.customer_email || session.client_reference_id;
         const priceId = session.metadata?.priceId;
         
-        if (!userEmail || !priceId) break;
+        console.log('User email:', userEmail);
+        console.log('Price ID:', priceId);
         
-        const user = await findUserByEmail(userEmail);
-        if (!user) break;
-        
-        const productInfo = PRICE_MAPPINGS[priceId];
-        if (!productInfo) break;
-        
-        if (productInfo.type === 'attempts') {
-          await addBonusAttempts(user.id, productInfo.amount);
-        } else if (productInfo.type === 'subscription') {
-          await updateSubscriptionStatus(user.id, 'active');
+        if (!userEmail) {
+          console.error('❌ ERROR: No user email found in session');
+          break;
         }
         
+        if (!priceId) {
+          console.error('❌ ERROR: No price ID found in metadata');
+          break;
+        }
+        
+        console.log('🔍 Looking up user in Firestore...');
+        const user = await findUserByEmail(userEmail);
+        
+        if (!user) {
+          console.error('❌ ERROR: User not found in Firestore:', userEmail);
+          break;
+        }
+        
+        console.log('✅ Found user:', user.id);
+        console.log('User data:', JSON.stringify(user.data));
+        
+        console.log('🔍 Looking up product info...');
+        const productInfo = PRICE_MAPPINGS[priceId];
+        
+        if (!productInfo) {
+          console.error('❌ ERROR: Unknown price ID:', priceId);
+          console.log('Available price IDs:', Object.keys(PRICE_MAPPINGS));
+          break;
+        }
+        
+        console.log('✅ Product info:', JSON.stringify(productInfo));
+        
+        // Update Firestore based on product type
+        if (productInfo.type === 'attempts') {
+          console.log(`📦 Adding ${productInfo.amount} bonus attempts...`);
+          const success = await addBonusAttempts(user.id, productInfo.amount);
+          if (success) {
+            console.log(`✅ SUCCESS: Added ${productInfo.amount} bonus attempts to ${userEmail}`);
+          } else {
+            console.error(`❌ FAILED: Could not add bonus attempts`);
+          }
+        } else if (productInfo.type === 'subscription') {
+          console.log(`⭐ Activating ${productInfo.plan} subscription...`);
+          const success = await updateSubscriptionStatus(user.id, 'active');
+          if (success) {
+            console.log(`✅ SUCCESS: Activated ${productInfo.plan} subscription for ${userEmail}`);
+          } else {
+            console.error(`❌ FAILED: Could not activate subscription`);
+          }
+        }
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ Webhook processing completed successfully');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         break;
       }
       
       case 'customer.subscription.deleted': {
+        console.log('❌ Processing subscription cancellation...');
+        
         const subscription = event.data.object;
+        console.log('Subscription ID:', subscription.id);
+        console.log('Customer ID:', subscription.customer);
+        
         const customer = await stripe.customers.retrieve(subscription.customer);
+        console.log('Customer email:', customer.email);
         
         if (customer.email) {
           const user = await findUserByEmail(customer.email);
           if (user) {
+            console.log('✅ Found user:', user.id);
             await updateSubscriptionStatus(user.id, 'cancelled');
+            console.log(`✅ Deactivated subscription for ${customer.email}`);
+          } else {
+            console.error('❌ User not found:', customer.email);
           }
         }
         break;
       }
+      
+      default:
+        console.log(`ℹ️ Unhandled event type: ${event.type}`);
     }
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    console.error('❌ ERROR processing webhook:', error);
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({ error: 'Webhook processing failed', details: error.message });
   }
 
   res.json({received: true});
