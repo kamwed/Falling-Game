@@ -42,12 +42,22 @@ app.post('/create-checkout-session', async (req, res) => {
   try {
     const { priceId, mode } = req.body;
 
+    console.log('Received checkout request:', { priceId, mode });
+
     if (!priceId) {
+      console.log('Error: No priceId provided');
       return res.status(400).json({ error: 'priceId is required' });
     }
 
     // Determine mode: 'subscription' for recurring, 'payment' for one-time
     const sessionMode = mode || 'payment';
+    console.log('Using mode:', sessionMode);
+
+    console.log('Creating Stripe session with:', {
+      mode: sessionMode,
+      priceId: priceId,
+      quantity: 1
+    });
 
     const session = await stripe.checkout.sessions.create({
       mode: sessionMode,
@@ -61,13 +71,28 @@ app.post('/create-checkout-session', async (req, res) => {
       cancel_url: 'https://topseat.us/cancel.html',
     });
 
+    console.log('Stripe session created successfully:', {
+      id: session.id,
+      url: session.url
+    });
+
     res.json({
       id: session.id,
       url: session.url,
     });
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error details:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode
+    });
+    res.status(500).json({ 
+      error: error.message,
+      type: error.type,
+      code: error.code
+    });
   }
 });
 
