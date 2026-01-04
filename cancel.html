@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Cancelled - Sky Fall</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(to bottom, #60a5fa, #2563eb);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 60px 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            color: #1f2937;
+            text-align: center;
+        }
+
+        .cancel-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: #f59e0b;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: #fef3c7;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .info-box p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .features-list {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .features-list h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1f2937;
+            text-align: center;
+        }
+
+        .features-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features-list li {
+            padding: 10px 0;
+            color: #4b5563;
+            font-size: 16px;
+        }
+
+        .features-list li:before {
+            content: "✓ ";
+            color: #22c55e;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #d97706;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #1e40af;
+            transform: scale(1.05);
+        }
+
+        .btn-tertiary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-tertiary:hover {
+            background: #4b5563;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .subtitle {
+                font-size: 18px;
+            }
+
+            .cancel-icon {
+                font-size: 60px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="cancel-icon">⚠️</div>
+            <h1>Payment Cancelled</h1>
+            <p class="subtitle">Your payment was not completed</p>
+
+            <div class="info-box">
+                <p><strong>No charges were made to your card</strong></p>
+                <p>You can return to the game and try again whenever you're ready.</p>
+            </div>
+
+            <div class="features-list">
+                <h3>💡 Why upgrade to Sky Fall Pro?</h3>
+                <ul>
+                    <li>Play unlimited times every day</li>
+                    <li>Never run out of attempts</li>
+                    <li>Compete for prizes without limits</li>
+                    <li>Support the game development</li>
+                    <li>Only $5.99/month - cancel anytime</li>
+                </ul>
+            </div>
+
+            <div class="button-group">
+                <a href="attempts.html" class="btn btn-primary">Try Again</a>
+                <a href="index.html" class="btn btn-secondary">Back to Game</a>
+            </div>
+
+            <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+                Questions? Contact us through the Feedback page.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
