@@ -382,12 +382,23 @@
         }
 
         // Ensure user has a share code
-        async function ensureUserShareCode(uid) {
+        async function ensureUserShareCode(uid, email, name) {
             try {
                 const userRef = doc(db, 'users', uid);
                 const userDoc = await getDoc(userRef);
                 
                 if (userDoc.exists() && userDoc.data().shareCode) {
+                    // Update email and name if they're provided but missing
+                    const updates = {};
+                    if (email && !userDoc.data().email) {
+                        updates.email = email;
+                    }
+                    if (name && !userDoc.data().name) {
+                        updates.name = name;
+                    }
+                    if (Object.keys(updates).length > 0) {
+                        await setDoc(userRef, updates, { merge: true });
+                    }
                     return userDoc.data().shareCode;
                 }
                 
@@ -413,6 +424,8 @@
                 
                 await setDoc(userRef, {
                     uid: uid,
+                    email: email || '',
+                    name: name || '',
                     shareCode: shareCode,
                     bonusAttempts: 0,
                     createdAt: Timestamp.now()
@@ -576,8 +589,8 @@
                 localStorage.setItem('playerEmail', email);
                 localStorage.setItem('playerName', name);
                 
-                // Ensure share code
-                await ensureUserShareCode(currentUser.uid);
+                // Ensure share code (and save email/name)
+                await ensureUserShareCode(currentUser.uid, email, name);
                 
                 // Process referral if new user
                 if (isNewUser && refCode) {
@@ -621,8 +634,8 @@
                     localStorage.setItem('playerName', name);
                 }
                 
-                // Ensure share code
-                await ensureUserShareCode(currentUser.uid);
+                // Ensure share code (and save email/name if missing)
+                await ensureUserShareCode(currentUser.uid, email, name || '');
                 
                 showMessage('Logged in successfully!', 'success');
                 await showLoggedIn(currentUser);
