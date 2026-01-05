@@ -523,6 +523,7 @@
         let playerName = localStorage.getItem('playerName') || '';
         let playerEmail = localStorage.getItem('playerEmail') || '';
         let currentUser = null;
+        let cachedSubscriptionStatus = null; // Cache to avoid Firestore reads on every game start
         let deviceId = localStorage.getItem('deviceId') || generateDeviceId();
         let currentRank = null;
         let attemptsRemaining = localStorage.getItem('attemptsRemaining') !== null ? parseInt(localStorage.getItem('attemptsRemaining')) : 1;
@@ -958,17 +959,8 @@
             const uidAttemptsRef = doc(db, 'attempts', `${currentUser.uid}_${dateKey}`);
             const deviceAttemptsRef = doc(db, 'attempts', `${deviceId}_${dateKey}`);
             
-            // Check subscription status for unlimited attempts
-            const userRef = doc(db, 'users', currentUser.uid);
-            const userDoc = await getDoc(userRef);
-            let isUnlimited = false;
-            
-            if (userDoc.exists()) {
-                const subscriptionStatus = userDoc.data().subscriptionStatus;
-                if (subscriptionStatus === 'pro' || subscriptionStatus === 'active') {
-                    isUnlimited = true;
-                }
-            }
+            // Use cached subscription status (instant check, no Firestore read)
+            const isUnlimited = cachedSubscriptionStatus === 'pro' || cachedSubscriptionStatus === 'active';
             
             // Get total available attempts (including bonus)
             const totalAvailable = await getTotalAvailableAttempts();
@@ -1107,6 +1099,7 @@
                 
                 if (userDoc.exists()) {
                     const subscriptionStatus = userDoc.data().subscriptionStatus;
+                    cachedSubscriptionStatus = subscriptionStatus; // Cache it!
                     
                     if (subscriptionStatus === 'pro' || subscriptionStatus === 'active') {
                         attemptsDisplay.textContent = `${attemptsUsedToday}/∞`;
@@ -1993,32 +1986,14 @@
                 return;
             }
             
-            // Check subscription status - Pro users have unlimited attempts
-            try {
-                const userRef = doc(db, 'users', currentUser.uid);
-                const userDoc = await getDoc(userRef);
-                
-                let isUnlimited = false;
-                if (userDoc.exists()) {
-                    const subscriptionStatus = userDoc.data().subscriptionStatus;
-                    if (subscriptionStatus === 'pro' || subscriptionStatus === 'active') {
-                        isUnlimited = true;
-                    }
-                }
-                
-                // Only check attempts limit for non-Pro users
-                if (!isUnlimited) {
-                    const totalAvailable = await getTotalAvailableAttempts();
-                    if (attemptsUsedToday >= totalAvailable) {
-                        console.error('Cannot start game - out of attempts');
-                        return;
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking subscription:', error);
-                // On error, check against total available
+            // Use cached subscription status for instant start (no Firestore read)
+            const isUnlimited = cachedSubscriptionStatus === 'pro' || cachedSubscriptionStatus === 'active';
+            
+            // Only check attempts limit for non-Pro users
+            if (!isUnlimited) {
                 const totalAvailable = await getTotalAvailableAttempts();
                 if (attemptsUsedToday >= totalAvailable) {
+                    console.error('Cannot start game - out of attempts');
                     return;
                 }
             }
