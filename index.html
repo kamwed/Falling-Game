@@ -958,9 +958,20 @@
             const uidAttemptsRef = doc(db, 'attempts', `${currentUser.uid}_${dateKey}`);
             const deviceAttemptsRef = doc(db, 'attempts', `${deviceId}_${dateKey}`);
             
-            // Get bonus attempts before transaction
-            const bonusAttempts = await getBonusAttempts(currentUser.uid);
-            const totalAvailable = MAX_ATTEMPTS_PER_DAY + bonusAttempts;
+            // Check subscription status for unlimited attempts
+            const userRef = doc(db, 'users', currentUser.uid);
+            const userDoc = await getDoc(userRef);
+            let isUnlimited = false;
+            
+            if (userDoc.exists()) {
+                const subscriptionStatus = userDoc.data().subscriptionStatus;
+                if (subscriptionStatus === 'pro' || subscriptionStatus === 'active') {
+                    isUnlimited = true;
+                }
+            }
+            
+            // Get total available attempts (including bonus)
+            const totalAvailable = await getTotalAvailableAttempts();
             
             try {
                 await runTransaction(db, async (transaction) => {
@@ -979,8 +990,8 @@
                         deviceCount = deviceAttemptsDoc.data().count || 0;
                     }
                     
-                    // If either has reached max (including bonus), block
-                    if (uidCount >= totalAvailable || deviceCount >= totalAvailable) {
+                    // If NOT unlimited and reached max, block
+                    if (!isUnlimited && (uidCount >= totalAvailable || deviceCount >= totalAvailable)) {
                         throw new Error('Maximum attempts reached');
                     }
                     
