@@ -581,28 +581,67 @@
             countdownInterval = setInterval(updateCountdown, 1000); // Update every second
         }
 
-        // Get user's referral count from Firestore
+        // Get user's referral count with validation status
         async function getReferralCount(uid) {
             try {
-                // Count users who have this user's share code as referredByCode
-                const usersRef = collection(db, 'users');
+                // Call backend API for validated referral count
+                const response = await fetch(`https://fallingman.onrender.com/api/referrals/status?uid=${uid}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                } else {
+                    // Fallback to simple count if API not available yet
+                    return await getReferralCountFallback(uid);
+                }
+            } catch (error) {
+                console.error('Error getting referral status from API:', error);
+                // Fallback to simple count
+                return await getReferralCountFallback(uid);
+            }
+        }
+
+        // Fallback: Simple referral count (for backward compatibility)
+        async function getReferralCountFallback(uid) {
+            try {
                 const userDoc = await getDoc(doc(db, 'users', uid));
                 
-                if (!userDoc.exists()) return 0;
+                if (!userDoc.exists()) return { validReferrals: 0, pendingReferrals: 0, totalReferrals: 0 };
                 
                 const shareCode = userDoc.data().shareCode;
-                if (!shareCode) return 0;
+                if (!shareCode) return { validReferrals: 0, pendingReferrals: 0, totalReferrals: 0 };
                 
                 const referredQuery = query(
-                    usersRef,
+                    collection(db, 'users'),
                     where('referredByCode', '==', shareCode)
                 );
                 const referredSnapshot = await getDocs(referredQuery);
                 
-                return referredSnapshot.size;
+                // For fallback, assume all are valid (old behavior)
+                return {
+                    validReferrals: referredSnapshot.size,
+                    pendingReferrals: 0,
+                    totalReferrals: referredSnapshot.size,
+                    milestones: {
+                        tier1: {
+                            threshold: 10,
+                            reward: 25,
+                            reached: referredSnapshot.size >= 10,
+                            progress: Math.min(referredSnapshot.size, 10),
+                            remaining: Math.max(0, 10 - referredSnapshot.size)
+                        },
+                        tier2: {
+                            threshold: 25,
+                            reward: 50,
+                            reached: referredSnapshot.size >= 25,
+                            progress: Math.min(referredSnapshot.size, 25),
+                            remaining: Math.max(0, 25 - referredSnapshot.size)
+                        }
+                    }
+                };
             } catch (error) {
                 console.error('Error getting referral count:', error);
-                return 0;
+                return { validReferrals: 0, pendingReferrals: 0, totalReferrals: 0 };
             }
         }
 
@@ -613,39 +652,52 @@
                 return;
             }
             
-            const referralCount = await getReferralCount(currentUser.uid);
+            const status = await getReferralCount(currentUser.uid);
+            const validCount = status.validReferrals || 0;
+            const pendingCount = status.pendingReferrals || 0;
+            const totalCount = status.totalReferrals || 0;
             
             // Show referral progress section
             document.getElementById('referralProgress').style.display = 'block';
-            document.getElementById('referralCount').textContent = referralCount;
+            document.getElementById('referralCount').textContent = validCount;
             
             // Update progress displays
-            document.getElementById('progress25').textContent = `${Math.min(referralCount, 10)}/10 friends`;
-            document.getElementById('progress50').textContent = `${Math.min(referralCount, 25)}/25 friends`;
+            document.getElementById('progress25').textContent = `${Math.min(validCount, 10)}/10 friends`;
+            document.getElementById('progress50').textContent = `${Math.min(validCount, 25)}/25 friends`;
             
             // Calculate progress percentage (out of 25 max)
-            const progressPercent = Math.min((referralCount / 25) * 100, 100);
+            const progressPercent = Math.min((validCount / 25) * 100, 100);
             document.getElementById('progressBar').style.width = `${progressPercent}%`;
             
             // Update milestone message
             const nextMilestoneEl = document.getElementById('nextMilestone');
-            if (referralCount >= 25) {
-                nextMilestoneEl.textContent = '🎉 Maximum rewards unlocked!';
-            } else if (referralCount >= 10) {
-                nextMilestoneEl.textContent = `${25 - referralCount} more friends to earn $50!`;
+            let milestoneText = '';
+            
+            if (validCount >= 25) {
+                milestoneText = '🎉 Maximum rewards unlocked!';
+            } else if (validCount >= 10) {
+                milestoneText = `${25 - validCount} more verified friends to earn $50!`;
             } else {
-                nextMilestoneEl.textContent = `${10 - referralCount} more friends to earn $25!`;
+                milestoneText = `${10 - validCount} more verified friends to earn $25!`;
             }
+            
+            // Show pending referrals info if any
+            if (pendingCount > 0) {
+                milestoneText += `<br><br>⏳ <strong>${pendingCount} pending referral${pendingCount > 1 ? 's' : ''}</strong><br>`;
+                milestoneText += '<span style="font-size: 14px; opacity: 0.8;">These will count when your friends verify their email and play the game.</span>';
+            }
+            
+            nextMilestoneEl.innerHTML = milestoneText;
             
             // Show earned rewards
             const earnedRewardsEl = document.getElementById('earnedRewards');
             const rewardsListEl = document.getElementById('rewardsList');
             const rewards = [];
             
-            if (referralCount >= 10) {
+            if (validCount >= 10) {
                 rewards.push('✅ $25 - 10 Friends Milestone');
             }
-            if (referralCount >= 25) {
+            if (validCount >= 25) {
                 rewards.push('✅ $50 - 25 Friends Milestone');
             }
             
