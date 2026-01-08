@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Sky Fall</title>
+    <title>Login - Sky Fall</title>
     <style>
         * {
             margin: 0;
@@ -16,71 +16,42 @@
             background: linear-gradient(to bottom, #60a5fa, #2563eb);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: center;
             padding: 20px;
-            color: white;
         }
 
-        .container {
-            max-width: 600px;
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            padding: 48px 40px;
+            max-width: 420px;
             width: 100%;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         .logo {
-            font-size: 48px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-text {
+            font-size: 32px;
             font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            color: #2563eb;
+            margin-bottom: 8px;
         }
 
-        .tagline {
-            font-size: 18px;
-            opacity: 0.9;
-        }
-
-        .back-button {
-            display: inline-block;
-            padding: 12px 30px;
-            background: #22c55e;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 18px;
-            transition: all 0.2s;
-            margin-bottom: 30px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .back-button:hover {
-            background: #16a34a;
-            transform: scale(1.05);
-        }
-
-        .content {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            color: #1f2937;
+        .logo-tagline {
+            color: #6b7280;
+            font-size: 14px;
         }
 
         h1 {
-            font-size: 36px;
-            margin-bottom: 30px;
-            color: #2563eb;
+            font-size: 24px;
+            color: #1f2937;
+            margin-bottom: 24px;
             text-align: center;
-        }
-
-        .form-section {
-            margin-bottom: 30px;
         }
 
         .form-group {
@@ -89,604 +60,549 @@
 
         label {
             display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #1f2937;
-            font-size: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
         }
 
         input[type="email"],
-        input[type="text"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #d1d5db;
-            border-radius: 8px;
+            padding: 12px 16px;
             font-size: 16px;
-            transition: border-color 0.2s;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-family: inherit;
         }
 
-        input:focus {
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="text"]:focus {
             outline: none;
             border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        .button-group {
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #2563eb;
+        }
+
+        .checkbox-group {
             display: flex;
-            gap: 10px;
+            align-items: center;
             margin-bottom: 20px;
         }
 
-        .btn {
-            flex: 1;
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .primary-button {
+            width: 100%;
             padding: 14px;
+            background: #2563eb;
+            color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            margin-bottom: 16px;
         }
 
-        .btn-primary {
-            background: #2563eb;
-            color: white;
+        .primary-button:hover:not(:disabled) {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
         }
 
-        .btn-primary:hover:not(:disabled) {
-            background: #1e40af;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: #4b5563;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            background: #dc2626;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
+        .primary-button:disabled {
+            background: #9ca3af;
             cursor: not-allowed;
         }
 
-        .message {
+        .secondary-link {
+            display: block;
+            text-align: center;
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: color 0.2s;
+        }
+
+        .secondary-link:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 16px;
+            color: #6b7280;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .signup-link {
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .signup-link a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
             padding: 12px;
             border-radius: 8px;
-            margin-bottom: 20px;
             font-size: 14px;
-            display: none;
-        }
-
-        .message.success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #86efac;
-            display: block;
-        }
-
-        .message.error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
-            display: block;
-        }
-
-        .message.info {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #93c5fd;
-            display: block;
-        }
-
-        .account-info {
-            background: #f3f4f6;
-            border-radius: 8px;
-            padding: 20px;
             margin-bottom: 20px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #d1d5db;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: bold;
-            color: #4b5563;
-        }
-
-        .info-value {
-            color: #1f2937;
-            font-family: monospace;
-        }
-
-        .hidden {
             display: none;
         }
 
-        @media (max-width: 768px) {
-            .logo {
-                font-size: 36px;
-            }
+        .success-message {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
 
-            h1 {
-                font-size: 28px;
-            }
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
 
-            .content {
-                padding: 25px;
-            }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
-            .button-group {
-                flex-direction: column;
+        .back-to-game {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .back-to-game a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .back-to-game a:hover {
+            color: #2563eb;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 32px 24px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">🎮 Sky Fall</div>
-            <div class="tagline">Manage your account</div>
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="login-container">
+        <div class="logo">
+            <div class="logo-text">🎮 Sky Fall</div>
+            <div class="logo-tagline">Fall through the sky, dodge obstacles</div>
         </div>
 
-        <a href="index.html" class="back-button">⬅ Back to Game</a>
+        <h1>Welcome Back</h1>
 
-        <div class="content">
-            <h1>Profile</h1>
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
 
-            <div id="messageArea" class="message"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="you@example.com" 
+                    required 
+                    autocomplete="email"
+                    autofocus
+                >
+            </div>
 
-            <!-- Login/Signup Form (shown when not logged in) -->
-            <div id="authForm" class="form-section">
-                <div class="form-group">
-                    <label for="loginEmail">Email Address</label>
-                    <input type="email" id="loginEmail" placeholder="your@email.com" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="loginName">Name</label>
-                    <input type="text" id="loginName" placeholder="Your name" maxlength="20" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="referralCode">Friend's Share Code (optional - new accounts only)</label>
-                    <input type="text" id="referralCode" placeholder="ABC123" maxlength="10" style="text-transform: uppercase;">
-                    <small style="color: #6b7280; margin-top: 5px; display: block;">Enter a friend's code to give them 5 bonus attempts!</small>
-                </div>
-
-                <div class="button-group">
-                    <button id="signupButton" class="btn btn-primary">Sign Up / Create Account</button>
-                    <button id="loginButton" class="btn btn-secondary">Log In</button>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password" 
+                        required 
+                        autocomplete="current-password"
+                    >
+                    <button type="button" class="password-toggle" id="togglePassword">Show</button>
                 </div>
             </div>
 
-            <!-- Account Info (shown when logged in) -->
-            <div id="accountInfo" class="hidden">
-                <div class="account-info">
-                    <div class="info-row">
-                        <span class="info-label">Email:</span>
-                        <span class="info-value" id="accountEmail">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Name:</span>
-                        <span class="info-value" id="accountName">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Your Share Code:</span>
-                        <span class="info-value" id="accountShareCode">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Bonus Attempts:</span>
-                        <span class="info-value" id="accountBonusAttempts">0</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Referred By:</span>
-                        <span class="info-value" id="accountReferredBy">None</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Account Created:</span>
-                        <span class="info-value" id="accountCreatedAt">-</span>
-                    </div>
-                </div>
-
-                <button id="logoutButton" class="btn btn-danger" style="margin-top: 20px;">Log Out</button>
+            <div class="checkbox-group">
+                <input type="checkbox" id="rememberMe" checked>
+                <label for="rememberMe">Keep me signed in</label>
             </div>
 
-            <div style="margin-top: 40px; text-align: center;">
-                <a href="index.html" class="back-button">Back to Game 🎮</a>
-            </div>
+            <button type="submit" class="primary-button" id="loginButton">
+                Sign In
+            </button>
+
+            <a href="#" class="secondary-link" id="forgotPassword">Forgot password?</a>
+        </form>
+
+        <div class="divider">
+            <span>or</span>
+        </div>
+
+        <div class="signup-link">
+            Don't have an account? <a href="#" id="showSignup">Create one</a>
+        </div>
+
+        <div class="back-to-game">
+            <a href="index.html">← Back to Game</a>
         </div>
     </div>
 
+    <!-- Firebase -->
     <script type="module">
-        // Import Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, runTransaction, Timestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Firebase configuration
+        // Firebase config
         const firebaseConfig = {
-            apiKey: "AIzaSyBic7ZeUQDgPZqORn0t6-wUCGHfEPASE10",
+            apiKey: "AIzaSyBGxJH2AkAn_r5sn1sn3jcqKw3K9vWBIqw",
             authDomain: "topseat-d1d5d.firebaseapp.com",
             projectId: "topseat-d1d5d",
             storageBucket: "topseat-d1d5d.firebasestorage.app",
-            messagingSenderId: "770306321288",
-            appId: "1:770306321288:web:0e768acffc4d189672283d"
+            messagingSenderId: "1004828488653",
+            appId: "1:1004828488653:web:2b0b4e8f7b3f7e8f7e8f7e"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
         // DOM elements
-        const messageArea = document.getElementById('messageArea');
-        const authForm = document.getElementById('authForm');
-        const accountInfo = document.getElementById('accountInfo');
-        const loginEmail = document.getElementById('loginEmail');
-        const loginName = document.getElementById('loginName');
-        const referralCode = document.getElementById('referralCode');
-        const signupButton = document.getElementById('signupButton');
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
+        const rememberMeCheckbox = document.getElementById('rememberMe');
         const loginButton = document.getElementById('loginButton');
-        const logoutButton = document.getElementById('logoutButton');
-        const accountEmail = document.getElementById('accountEmail');
-        const accountName = document.getElementById('accountName');
-        const accountShareCode = document.getElementById('accountShareCode');
-        const accountBonusAttempts = document.getElementById('accountBonusAttempts');
-        const accountReferredBy = document.getElementById('accountReferredBy');
-        const accountCreatedAt = document.getElementById('accountCreatedAt');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const forgotPasswordLink = document.getElementById('forgotPassword');
+        const showSignupLink = document.getElementById('showSignup');
+        const loadingOverlay = document.getElementById('loadingOverlay');
 
-        let currentUser = null;
-
-        // Email validation
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        // Show loading overlay
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
         }
 
-        // Show message
-        function showMessage(text, type = 'info') {
-            messageArea.textContent = text;
-            messageArea.className = `message ${type}`;
-            setTimeout(() => {
-                messageArea.className = 'message';
-                messageArea.textContent = '';
-            }, 5000);
+        // Hide loading overlay
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
         }
 
-        // Generate share code
-        function generateShareCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for (let i = 0; i < 6; i++) {
-                code += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return code;
+        // Show error
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
         }
 
-        // Ensure user has a share code
-        async function ensureUserShareCode(uid, email, name) {
-            try {
-                const userRef = doc(db, 'users', uid);
-                const userDoc = await getDoc(userRef);
-                
-                if (userDoc.exists() && userDoc.data().shareCode) {
-                    // Update email and name if they're provided but missing
-                    const updates = {};
-                    if (email && !userDoc.data().email) {
-                        updates.email = email;
-                    }
-                    if (name && !userDoc.data().name) {
-                        updates.name = name;
-                    }
-                    if (Object.keys(updates).length > 0) {
-                        await setDoc(userRef, updates, { merge: true });
-                    }
-                    return userDoc.data().shareCode;
-                }
-                
-                // Generate unique code
-                let shareCode = generateShareCode();
-                let isUnique = false;
-                let attempts = 0;
-                
-                while (!isUnique && attempts < 10) {
-                    const existingQuery = query(
-                        collection(db, 'users'),
-                        where('shareCode', '==', shareCode)
-                    );
-                    const existingDocs = await getDocs(existingQuery);
-                    
-                    if (existingDocs.empty) {
-                        isUnique = true;
-                    } else {
-                        shareCode = generateShareCode();
-                        attempts++;
-                    }
-                }
-                
-                await setDoc(userRef, {
-                    uid: uid,
-                    email: email || '',
-                    name: name || '',
-                    shareCode: shareCode,
-                    bonusAttempts: 0,
-                    createdAt: Timestamp.now()
-                }, { merge: true });
-                
-                return shareCode;
-            } catch (error) {
-                console.error('Error ensuring share code:', error);
-                return null;
-            }
+        // Show success
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
         }
 
-        // Process referral code
-        async function processReferralCode(newUserUid, referralCodeValue, newUserName) {
-            if (!referralCodeValue || referralCodeValue.trim() === '') {
-                return { success: false, message: '' };
-            }
-            
-            try {
-                referralCodeValue = referralCodeValue.trim().toUpperCase();
-                
-                // Check if user already has a referredByCode
-                const newUserRef = doc(db, 'users', newUserUid);
-                const newUserDoc = await getDoc(newUserRef);
-                
-                if (newUserDoc.exists() && newUserDoc.data().referredByCode) {
-                    return { success: false, message: 'You have already used a referral code.' };
-                }
-                
-                // Find the referrer by share code
-                const referrerQuery = query(
-                    collection(db, 'users'),
-                    where('shareCode', '==', referralCodeValue)
-                );
-                const referrerDocs = await getDocs(referrerQuery);
-                
-                if (referrerDocs.empty) {
-                    return { success: false, message: 'Referral code not found. Continuing without referral.' };
-                }
-                
-                const referrerDoc = referrerDocs.docs[0];
-                const referrerUid = referrerDoc.data().uid;
-                
-                // Prevent self-referral
-                if (referrerUid === newUserUid) {
-                    return { success: false, message: 'You cannot use your own referral code.' };
-                }
-                
-                // Award bonus attempts using transaction
-                await runTransaction(db, async (transaction) => {
-                    const referrerRef = doc(db, 'users', referrerUid);
-                    const referrerSnapshot = await transaction.get(referrerRef);
-                    
-                    if (!referrerSnapshot.exists()) {
-                        throw new Error('Referrer not found');
-                    }
-                    
-                    const currentBonus = referrerSnapshot.data().bonusAttempts || 0;
-                    transaction.update(referrerRef, {
-                        bonusAttempts: currentBonus + 5
-                    });
-                    
-                    transaction.update(newUserRef, {
-                        referredByCode: referralCodeValue,
-                        referredAt: Timestamp.now()
-                    });
-                });
-                
-                return { success: true, message: `✓ Referral successful! Your friend will receive 5 bonus attempts.` };
-            } catch (error) {
-                console.error('Error processing referral:', error);
-                return { success: false, message: 'Error processing referral code.' };
-            }
+        // Clear messages
+        function clearMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
         }
 
-        // Load account info
-        async function loadAccountInfo(uid) {
-            try {
-                const userRef = doc(db, 'users', uid);
-                const userDoc = await getDoc(userRef);
-                
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    accountShareCode.textContent = data.shareCode || 'Not generated';
-                    accountBonusAttempts.textContent = data.bonusAttempts || 0;
-                    accountReferredBy.textContent = data.referredByCode || 'None';
-                    
-                    // Display account creation date
-                    if (data.createdAt) {
-                        const createdDate = data.createdAt.toDate();
-                        const formattedDate = createdDate.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        });
-                        accountCreatedAt.textContent = formattedDate;
-                    } else {
-                        accountCreatedAt.textContent = 'Unknown';
-                    }
-                }
-                
-                // Load name from localStorage
-                const savedName = localStorage.getItem('playerName');
-                accountName.textContent = savedName || 'Not set';
-            } catch (error) {
-                console.error('Error loading account info:', error);
-            }
-        }
-
-        // Show logged in view
-        async function showLoggedIn(user) {
-            authForm.classList.add('hidden');
-            accountInfo.classList.remove('hidden');
-            accountEmail.textContent = user.email;
-            await loadAccountInfo(user.uid);
-        }
-
-        // Show logged out view
-        function showLoggedOut() {
-            authForm.classList.remove('hidden');
-            accountInfo.classList.add('hidden');
-        }
-
-        // Sign up handler
-        signupButton.addEventListener('click', async () => {
-            const email = loginEmail.value.trim();
-            const name = loginName.value.trim();
-            const refCode = referralCode.value.trim();
-            
-            if (!email || !isValidEmail(email)) {
-                showMessage('Please enter a valid email address.', 'error');
-                return;
-            }
-            
-            if (!name) {
-                showMessage('Please enter your name.', 'error');
-                return;
-            }
-            
-            signupButton.disabled = true;
-            signupButton.textContent = 'Creating account...';
-            
-            try {
-                const password = 'skyfall_' + email;
-                let userCredential;
-                let isNewUser = false;
-                
-                try {
-                    userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    isNewUser = true;
-                } catch (error) {
-                    if (error.code === 'auth/email-already-in-use') {
-                        userCredential = await signInWithEmailAndPassword(auth, email, password);
-                        showMessage('Account already exists. Logging you in...', 'info');
-                    } else {
-                        throw error;
-                    }
-                }
-                
-                currentUser = userCredential.user;
-                localStorage.setItem('playerEmail', email);
-                localStorage.setItem('playerName', name);
-                
-                // Ensure share code (and save email/name)
-                await ensureUserShareCode(currentUser.uid, email, name);
-                
-                // Process referral if new user
-                if (isNewUser && refCode) {
-                    const result = await processReferralCode(currentUser.uid, refCode, name);
-                    showMessage(result.message || 'Account created successfully!', result.success ? 'success' : 'info');
-                } else if (isNewUser) {
-                    showMessage('Account created successfully!', 'success');
-                }
-                
-                await showLoggedIn(currentUser);
-                
-            } catch (error) {
-                console.error('Error signing up:', error);
-                showMessage('Error creating account: ' + error.message, 'error');
-            } finally {
-                signupButton.disabled = false;
-                signupButton.textContent = 'Sign Up / Create Account';
+        // Password toggle
+        togglePassword.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                togglePassword.textContent = 'Hide';
+            } else {
+                passwordInput.type = 'password';
+                togglePassword.textContent = 'Show';
             }
         });
 
-        // Login handler
-        loginButton.addEventListener('click', async () => {
-            const email = loginEmail.value.trim();
-            const name = loginName.value.trim();
-            
-            if (!email || !isValidEmail(email)) {
-                showMessage('Please enter a valid email address.', 'error');
-                return;
-            }
-            
-            loginButton.disabled = true;
-            loginButton.textContent = 'Logging in...';
-            
-            try {
-                const password = 'skyfall_' + email;
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                
-                currentUser = userCredential.user;
-                localStorage.setItem('playerEmail', email);
-                if (name) {
-                    localStorage.setItem('playerName', name);
-                }
-                
-                // Ensure share code (and save email/name if missing)
-                await ensureUserShareCode(currentUser.uid, email, name || '');
-                
-                showMessage('Logged in successfully!', 'success');
-                await showLoggedIn(currentUser);
-                
-            } catch (error) {
-                console.error('Error logging in:', error);
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                    showMessage('Account not found. Please sign up first.', 'error');
-                } else {
-                    showMessage('Error logging in: ' + error.message, 'error');
-                }
-            } finally {
-                loginButton.disabled = false;
-                loginButton.textContent = 'Log In';
-            }
-        });
-
-        // Logout handler
-        logoutButton.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                currentUser = null;
-                showMessage('Logged out successfully.', 'success');
-                showLoggedOut();
-                loginEmail.value = '';
-                loginName.value = '';
-                referralCode.value = '';
-            } catch (error) {
-                console.error('Error logging out:', error);
-                showMessage('Error logging out: ' + error.message, 'error');
-            }
-        });
-
-        // Initialize
+        // Auto-login check - runs on page load
+        showLoading();
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUser = user;
-                await showLoggedIn(user);
+                // User is already logged in, redirect to game
+                console.log('User already logged in:', user.email);
+                window.location.href = 'index.html';
             } else {
-                showLoggedOut();
+                // No user, show login form
+                hideLoading();
             }
         });
 
-        // Prefill email if already saved
-        const savedEmail = localStorage.getItem('playerEmail');
-        const savedName = localStorage.getItem('playerName');
-        if (savedEmail) {
-            loginEmail.value = savedEmail;
+        // Generate simple password from email
+        function generatePassword(email) {
+            return 'skyfall_' + email;
         }
-        if (savedName) {
-            loginName.value = savedName;
+
+        // Save user to Firestore
+        async function saveUserToFirestore(uid, email) {
+            try {
+                const userRef = doc(db, 'users', uid);
+                const userDoc = await getDoc(userRef);
+
+                if (!userDoc.exists()) {
+                    // Generate share code
+                    const shareCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    
+                    await setDoc(userRef, {
+                        uid: uid,
+                        email: email,
+                        shareCode: shareCode,
+                        bonusAttempts: 0,
+                        createdAt: Timestamp.now()
+                    }, { merge: true });
+                } else {
+                    // Update email if missing
+                    if (!userDoc.data().email) {
+                        await setDoc(userRef, {
+                            email: email
+                        }, { merge: true });
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving user:', error);
+            }
+        }
+
+        // Login form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages();
+
+            const email = emailInput.value.trim().toLowerCase();
+            const password = generatePassword(email);
+            const rememberMe = rememberMeCheckbox.checked;
+
+            if (!email) {
+                showError('Please enter your email address');
+                return;
+            }
+
+            // Disable button and show loading
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<span class="loading-spinner"></span>Signing in...';
+
+            try {
+                // Set persistence based on "Remember me"
+                if (rememberMe) {
+                    await setPersistence(auth, browserLocalPersistence); // Stay signed in
+                } else {
+                    await setPersistence(auth, browserSessionPersistence); // Sign out on close
+                }
+
+                // Try to sign in
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    console.log('Logged in:', userCredential.user.email);
+                    
+                    // Save to Firestore
+                    await saveUserToFirestore(userCredential.user.uid, email);
+                    
+                    // Redirect to game
+                    showSuccess('Signed in successfully! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 500);
+
+                } catch (signInError) {
+                    // If user doesn't exist, create account automatically
+                    if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
+                        console.log('User not found, creating new account...');
+                        
+                        const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        console.log('Account created:', newUserCredential.user.email);
+                        
+                        // Save to Firestore
+                        await saveUserToFirestore(newUserCredential.user.uid, email);
+                        
+                        // Redirect to game
+                        showSuccess('Account created! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 500);
+                    } else {
+                        throw signInError;
+                    }
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                let errorMsg = 'Something went wrong. Please try again.';
+                
+                if (error.code === 'auth/invalid-email') {
+                    errorMsg = 'Please enter a valid email address';
+                } else if (error.code === 'auth/user-disabled') {
+                    errorMsg = 'This account has been disabled';
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMsg = 'Network error. Please check your connection';
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMsg = 'Too many attempts. Please try again later';
+                }
+                
+                showError(errorMsg);
+                
+                // Re-enable button
+                loginButton.disabled = false;
+                loginButton.textContent = 'Sign In';
+            }
+        });
+
+        // Forgot password
+        forgotPasswordLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            clearMessages();
+
+            const email = emailInput.value.trim().toLowerCase();
+
+            if (!email) {
+                showError('Please enter your email address first');
+                emailInput.focus();
+                return;
+            }
+
+            if (confirm(`Send password reset email to ${email}?`)) {
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    showSuccess('Password reset email sent! Check your inbox.');
+                } catch (error) {
+                    console.error('Password reset error:', error);
+                    showError('Could not send reset email. Please check your email address.');
+                }
+            }
+        });
+
+        // Show signup (same as login in this simplified version)
+        showSignupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            clearMessages();
+            showSuccess('Just enter your email - we\'ll create your account automatically!');
+        });
+
+        // Prefill email if stored
+        const savedEmail = localStorage.getItem('playerEmail');
+        if (savedEmail) {
+            emailInput.value = savedEmail;
+            passwordInput.focus();
         }
     </script>
 </body>
