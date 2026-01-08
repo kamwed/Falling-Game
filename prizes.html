@@ -204,40 +204,40 @@
 
             <!-- Countdown Timer Section -->
             <div id="countdownSection" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center; color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);">
-                <h2 style="font-size: 24px; margin-bottom: 15px; color: white;">⏱️ Current Leader Timer</h2>
-                <div id="leaderInfo" style="font-size: 18px; margin-bottom: 20px; opacity: 0.9;">Loading...</div>
+                <h2 style="font-size: 24px; margin-bottom: 15px; color: white;">⏱️ Time Until Next Payout</h2>
+                <div id="leaderInfo" style="font-size: 18px; margin-bottom: 20px; opacity: 0.9;">Loading current leader...</div>
                 <div id="countdownTimer" style="font-size: 48px; font-weight: bold; font-family: monospace; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">--:--:--</div>
-                <div id="countdownStatus" style="font-size: 16px; opacity: 0.9;">Checking leaderboard...</div>
+                <div id="countdownStatus" style="font-size: 16px; opacity: 0.9;">Next payout: Friday at 12:00 AM EST</div>
             </div>
 
             <!-- Winner Message (hidden by default) -->
             <div id="winnerMessage" style="display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center; color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
                 <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
-                <h2 style="font-size: 32px; margin-bottom: 15px; color: white;">Congratulations!</h2>
-                <div id="winnerText" style="font-size: 20px; margin-bottom: 20px;">You've held #1 for 24 hours!</div>
-                <div style="font-size: 18px; opacity: 0.9;">Please DM a screenshot of your score, rank, and this timer at 0 to claim your prize!</div>
+                <h2 style="font-size: 32px; margin-bottom: 15px; color: white;">You're in the Lead!</h2>
+                <div id="winnerText" style="font-size: 20px; margin-bottom: 20px;">You have the highest score this week!</div>
+                <div style="font-size: 18px; opacity: 0.9;">Keep your score at #1 until Friday at 12:00 AM EST to win $50!</div>
             </div>
 
             <h2>How to Win</h2>
-            <p>Compete against players worldwide for a chance to win real cash! The prize system is designed to reward the most skilled and consistent player.</p>
+            <p>Compete against players worldwide for a chance to win real cash every week! The prize goes to whoever has the highest score when the week ends.</p>
 
             <div class="rules-list">
                 <ul>
-                    <li><strong>Hold the #1 spot:</strong> You must achieve and maintain the highest score on the global leaderboard.</li>
-                    <li><strong>24-hour requirement:</strong> Your score must remain at the top for a full 24 consecutive hours without being beaten.</li>
-                    <li><strong>Timer resets:</strong> If another player beats your score before the 24-hour window ends, the countdown resets and the new leader starts their own 24-hour timer.</li>
+                    <li><strong>Weekly Competition:</strong> Every Friday at 12:00 AM EST, the player with the highest score on the global leaderboard wins $50.</li>
+                    <li><strong>Simple Rules:</strong> Just have the #1 score when the timer hits zero on Friday at midnight.</li>
+                    <li><strong>Fresh Start:</strong> After each payout, the competition resets and a new week begins. Everyone has a chance to win!</li>
                 </ul>
             </div>
 
             <h2>Payout Process</h2>
-            <p>To claim your prize, DM a screenshot of your score, rank, and the timer at 0. We will validate your score and send you your prize.</p>
+            <p>Winners are automatically determined every Friday at 12:00 AM EST. We'll contact you via email to verify your score and send your $50 prize.</p>
 
             <h2>Competition Rules</h2>
             <ul>
                 <li>Only legitimate gameplay counts—any cheating or exploitation will result in disqualification.</li>
-                <li>One prize per 24-hour cycle—once a winner is determined, the next competition cycle begins.</li>
+                <li>One $50 prize is awarded every Friday at 12:00 AM EST to the player with the highest score.</li>
                 <li>You must have a verified email address to be eligible for prizes.</li>
-                <li>Players can win multiple times if they achieve the 24-hour hold requirement again in future cycles.</li>
+                <li>Players can win multiple weeks in a row if they maintain the #1 position.</li>
             </ul>
 
             <p style="margin-top: 30px; font-size: 20px; font-weight: bold; text-align: center; color: #2563eb;">
@@ -309,60 +309,41 @@
             }
         }
 
-        // Get or create leader tracking document
-        async function getLeaderTracking() {
-            try {
-                const trackingRef = doc(db, 'leaderTracking', 'current');
-                const trackingDoc = await getDoc(trackingRef);
-                
-                if (trackingDoc.exists()) {
-                    return trackingDoc.data();
-                }
-                return null;
-            } catch (error) {
-                console.error('Error getting leader tracking:', error);
-                return null;
-            }
-        }
-
-        // Update leader tracking when leader changes
-        async function updateLeaderTracking(leader) {
-            try {
-                const trackingRef = doc(db, 'leaderTracking', 'current');
-                const trackingDoc = await getDoc(trackingRef);
-                
-                // Check if this is a new leader
-                if (!trackingDoc.exists() || trackingDoc.data().uid !== leader.uid) {
-                    // New leader - reset timer
-                    await setDoc(trackingRef, {
-                        uid: leader.uid,
-                        email: leader.email,
-                        name: leader.name,
-                        score: leader.score,
-                        startTime: Timestamp.now(),
-                        lastChecked: Timestamp.now()
-                    });
-                    console.log('New leader detected, timer reset');
-                } else {
-                    // Same leader - just update lastChecked
-                    await setDoc(trackingRef, {
-                        ...trackingDoc.data(),
-                        lastChecked: Timestamp.now()
-                    });
-                }
-            } catch (error) {
-                console.error('Error updating leader tracking:', error);
-            }
-        }
-
-        // Format time as HH:MM:SS
+        // Format time as HH:MM:SS or Days HH:MM:SS
         function formatTime(milliseconds) {
             const totalSeconds = Math.floor(milliseconds / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = totalSeconds % 60;
             
+            if (days > 0) {
+                return `${days}d ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Get next Friday at 12:00 AM EST
+        function getNextFridayMidnight() {
+            const now = new Date();
+            
+            // Convert to EST (UTC-5)
+            const estOffset = -5 * 60; // EST offset in minutes
+            const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const estNow = new Date(utcNow + (estOffset * 60000));
+            
+            // Find next Friday
+            const daysUntilFriday = (5 - estNow.getDay() + 7) % 7; // Friday is day 5
+            const nextFriday = new Date(estNow);
+            nextFriday.setDate(estNow.getDate() + (daysUntilFriday === 0 ? 7 : daysUntilFriday));
+            nextFriday.setHours(0, 0, 0, 0);
+            
+            // If it's Friday but past midnight, go to next Friday
+            if (daysUntilFriday === 0 && estNow.getHours() >= 0) {
+                nextFriday.setDate(nextFriday.getDate() + 7);
+            }
+            
+            return nextFriday;
         }
 
         // Update countdown display
@@ -370,62 +351,58 @@
             const leader = await getCurrentLeader();
             
             if (!leader) {
-                leaderInfo.textContent = 'No scores yet!';
-                countdownTimer.textContent = '24:00:00';
-                countdownStatus.textContent = 'Waiting for first score...';
-                return;
-            }
-
-            // Update tracking
-            await updateLeaderTracking(leader);
-            
-            // Get tracking data
-            const tracking = await getLeaderTracking();
-            
-            if (!tracking) {
-                leaderInfo.textContent = 'Loading...';
+                leaderInfo.textContent = 'No scores yet! Be the first to play!';
+                const nextFriday = getNextFridayMidnight();
+                const remaining = nextFriday.getTime() - Date.now();
+                countdownTimer.textContent = formatTime(remaining);
+                countdownStatus.textContent = 'Next payout: Friday at 12:00 AM EST';
                 return;
             }
 
             // Display leader info
-            leaderInfo.textContent = `Current Leader: ${tracking.name} (Score: ${tracking.score.toLocaleString()})`;
+            leaderInfo.textContent = `Current Leader: ${leader.name} with ${leader.score.toLocaleString()} points`;
 
-            // Calculate time remaining
-            const startTime = tracking.startTime.toMillis();
-            const now = Date.now();
-            const elapsed = now - startTime;
-            const twentyFourHours = 24 * 60 * 60 * 1000;
-            const remaining = twentyFourHours - elapsed;
+            // Calculate time until next Friday midnight EST
+            const nextFriday = getNextFridayMidnight();
+            const remaining = nextFriday.getTime() - Date.now();
 
             if (remaining <= 0) {
-                // Timer expired - check if current user is the winner
+                // Payout time reached
                 countdownTimer.textContent = '00:00:00';
-                countdownStatus.textContent = '🎉 Time completed!';
+                countdownStatus.textContent = '🎉 Payout in progress!';
                 
-                if (currentUser && currentUser.uid === tracking.uid) {
+                if (currentUser && currentUser.uid === leader.uid) {
                     // Show winner message to the current user
                     winnerMessage.style.display = 'block';
-                    winnerText.textContent = `You've held #1 for 24 hours with ${tracking.score.toLocaleString()} points!`;
+                    winnerText.textContent = `You won this week with ${leader.score.toLocaleString()} points!`;
                 } else {
-                    countdownStatus.textContent = `${tracking.name} has held #1 for 24 hours!`;
+                    countdownStatus.textContent = `${leader.name} won this week!`;
                 }
             } else {
                 // Timer still running
                 countdownTimer.textContent = formatTime(remaining);
                 
-                const hoursRemaining = Math.floor(remaining / (60 * 60 * 1000));
-                const minutesRemaining = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+                const daysRemaining = Math.floor(remaining / (24 * 60 * 60 * 1000));
+                const hoursRemaining = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
                 
-                if (hoursRemaining > 1) {
-                    countdownStatus.textContent = `${tracking.name} has been #1 for ${24 - hoursRemaining} hours`;
-                } else if (hoursRemaining === 1) {
-                    countdownStatus.textContent = `Less than 1 hour until ${tracking.name} wins!`;
+                if (daysRemaining > 1) {
+                    countdownStatus.textContent = `${daysRemaining} days until payout`;
+                } else if (daysRemaining === 1) {
+                    countdownStatus.textContent = `1 day and ${hoursRemaining} hours until payout`;
+                } else if (hoursRemaining > 1) {
+                    countdownStatus.textContent = `${hoursRemaining} hours until payout`;
                 } else {
-                    countdownStatus.textContent = `Final ${minutesRemaining} minutes!`;
+                    const minutesRemaining = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+                    countdownStatus.textContent = `${minutesRemaining} minutes until payout!`;
                 }
                 
-                // Hide winner message if timer is still running
-                winnerMessage.style.display = 'none';
+                // Check if current user is winning
+                if (currentUser && currentUser.uid === leader.uid) {
+                    winnerMessage.style.display = 'block';
+                    winnerText.textContent = `You have the highest score! Keep it until Friday at 12:00 AM EST to win $50!`;
+                } else {
+                    winnerMessage.style.display = 'none';
+                }
             }
         }
 
