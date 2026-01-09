@@ -387,7 +387,7 @@
                     <p class="stat">Coins Collected: <span id="finalCoins">0</span></p>
                     <p class="stat">Attempts Used Today: <span id="finalAttempts">1/1</span></p>
                     <div>
-                        <button id="copyButton" class="btn btn-copy">📋 Copy Result</button>
+                        <button id="copyButton" class="btn btn-copy">ðŸ“‹ Copy Result</button>
                         <button id="restartButton" class="btn btn-restart">Play Again</button>
                     </div>
                 </div>
@@ -420,15 +420,15 @@
         
         <div class="controls">
             <div class="controls-title">Controls:</div>
-            <div>← → Arrow Keys to Move</div>
+            <div>â† â†’ Arrow Keys to Move</div>
             <div class="controls-hint">Avoid obstacles and collect coins!</div>
         </div>
     </div>
 
     <!-- Mobile Touch Controls -->
     <div class="touch-controls">
-        <div id="leftButton" class="touch-button">◀ LEFT</div>
-        <div id="rightButton" class="touch-button">RIGHT ▶</div>
+        <div id="leftButton" class="touch-button">â—€ LEFT</div>
+        <div id="rightButton" class="touch-button">RIGHT â–¶</div>
     </div>
 
     <!-- Menu Button -->
@@ -445,27 +445,27 @@
     <div id="menuPanel" class="menu-panel">
         <div class="menu-header">Menu</div>
         <div class="menu-item" id="menuProfile">
-            <div class="menu-item-icon">👤</div>
+            <div class="menu-item-icon">ðŸ‘¤</div>
             <div class="menu-item-text">Profile</div>
         </div>
         <div class="menu-item" id="menuPrizes">
-            <div class="menu-item-icon">🏆</div>
+            <div class="menu-item-icon">ðŸ†</div>
             <div class="menu-item-text">Prizes</div>
         </div>
         <div class="menu-item" id="menuAttempts">
-            <div class="menu-item-icon">🎫</div>
+            <div class="menu-item-icon">ðŸŽ«</div>
             <div class="menu-item-text">Attempts</div>
         </div>
         <div class="menu-item" id="menuShare">
-            <div class="menu-item-icon">📤</div>
+            <div class="menu-item-icon">ðŸ“¤</div>
             <div class="menu-item-text">Share</div>
         </div>
         <div class="menu-item" id="menuHowToPlay">
-            <div class="menu-item-icon">❓</div>
+            <div class="menu-item-icon">â“</div>
             <div class="menu-item-text">How to Play</div>
         </div>
         <div class="menu-item" id="menuFeedback">
-            <div class="menu-item-icon">💬</div>
+            <div class="menu-item-icon">ðŸ’¬</div>
             <div class="menu-item-text">Feedback/Bug Report</div>
         </div>
     </div>
@@ -556,14 +556,14 @@
                         fallSpeed *= 1.25;
                     }
                     
-                    console.log('✅ Loaded progress from Firestore:', { currentLevel, fallSpeed, rawData: progress });
+                    console.log('âœ… Loaded progress from Firestore:', { currentLevel, fallSpeed, rawData: progress });
                 } else {
-                    console.log('⚠️ No saved progress found in Firestore, starting at level 1');
+                    console.log('âš ï¸ No saved progress found in Firestore, starting at level 1');
                     currentLevel = 1;
                     fallSpeed = 2;
                 }
             } catch (error) {
-                console.error('❌ Error loading progress from Firestore:', error);
+                console.error('âŒ Error loading progress from Firestore:', error);
                 // Fallback to level 1 if there's an error
                 currentLevel = 1;
                 fallSpeed = 2;
@@ -573,12 +573,12 @@
         // Save progress to Firestore
         async function saveProgress() {
             if (!currentUser) {
-                console.log('⚠️ No user authenticated, cannot save progress');
+                console.log('âš ï¸ No user authenticated, cannot save progress');
                 return;
             }
             
             try {
-                console.log('💾 Saving progress for user:', currentUser.uid, 'Level:', currentLevel);
+                console.log('ðŸ’¾ Saving progress for user:', currentUser.uid, 'Level:', currentLevel);
                 const progressRef = doc(db, 'userProgress', currentUser.uid);
                 const progress = {
                     uid: currentUser.uid,
@@ -588,9 +588,9 @@
                 };
                 
                 await setDoc(progressRef, progress);
-                console.log('✅ Progress saved to Firestore successfully:', progress);
+                console.log('âœ… Progress saved to Firestore successfully:', progress);
             } catch (error) {
-                console.error('❌ Error saving progress to Firestore:', error);
+                console.error('âŒ Error saving progress to Firestore:', error);
             }
         }
 
@@ -753,19 +753,19 @@
         // Create or get user's share code
         async function ensureUserShareCode(uid) {
             try {
-                console.log('🔍 Ensuring share code for UID:', uid);
+                console.log('ðŸ” Ensuring share code for UID:', uid);
                 const userRef = doc(db, 'users', uid);
                 const userDoc = await getDoc(userRef);
                 
-                console.log('📄 User doc exists:', userDoc.exists());
+                console.log('ðŸ“„ User doc exists:', userDoc.exists());
                 
                 if (userDoc.exists() && userDoc.data().shareCode) {
-                    console.log('✅ Found existing share code:', userDoc.data().shareCode);
+                    console.log('âœ… Found existing share code:', userDoc.data().shareCode);
                     return userDoc.data().shareCode;
                 }
                 
                 // Generate a unique code
-                console.log('🎲 Generating new share code...');
+                console.log('ðŸŽ² Generating new share code...');
                 let shareCode = generateShareCode();
                 let isUnique = false;
                 let attempts = 0;
@@ -785,7 +785,7 @@
                     }
                 }
                 
-                console.log('💾 Saving share code to Firestore:', shareCode);
+                console.log('ðŸ’¾ Saving share code to Firestore:', shareCode);
                 
                 // Save the share code
                 await setDoc(userRef, {
@@ -795,10 +795,10 @@
                     createdAt: Timestamp.now()
                 }, { merge: true });
                 
-                console.log('✅ Share code saved successfully:', shareCode);
+                console.log('âœ… Share code saved successfully:', shareCode);
                 return shareCode;
             } catch (error) {
-                console.error('❌ Error ensuring share code:', error);
+                console.error('âŒ Error ensuring share code:', error);
                 console.error('Error details:', error.message, error.code);
                 return null;
             }
@@ -909,7 +909,7 @@
                     });
                 });
                 
-                console.log('✅ Referral successful! Awarded 5 bonus attempts to referrer');
+                console.log('âœ… Referral successful! Awarded 5 bonus attempts to referrer');
             } catch (error) {
                 console.error('Error processing referral:', error);
             }
@@ -1102,7 +1102,7 @@
                     cachedSubscriptionStatus = subscriptionStatus; // Cache it!
                     
                     if (subscriptionStatus === 'pro' || subscriptionStatus === 'active') {
-                        attemptsDisplay.textContent = `${attemptsUsedToday}/∞`;
+                        attemptsDisplay.textContent = `${attemptsUsedToday}/âˆž`;
                         return;
                     }
                 }
@@ -1285,9 +1285,9 @@
             showIntro = false;
             introScreen.style.display = 'none';
             
-            // Check if authenticated - if not, show signup
+            // Check if authenticated - if not, redirect to signup
             if (!currentUser) {
-                nameScreen.style.display = 'flex';
+                window.location.href = 'signup.html';
                 return;
             }
             
@@ -1320,7 +1320,7 @@
             try {
                 await incrementAttempts();
                 
-                // Reload attempts display (will show ∞ for Pro users)
+                // Reload attempts display (will show âˆž for Pro users)
                 await loadAttemptsData();
             } catch (error) {
                 console.error('Failed to increment attempts:', error);
@@ -1372,9 +1372,22 @@
             }
             
             isAuthenticating = true;
-            submitNameButton.textContent = 'Authenticating...';
+            submitNameButton.textContent = 'Please wait...';
             submitNameButton.disabled = true;
             
+            // Instead of auto-creating accounts, redirect to proper signup/login
+            // Save the entered info for prefilling
+            localStorage.setItem('tempEmail', email);
+            localStorage.setItem('tempName', name);
+            if (referralCode) {
+                localStorage.setItem('tempReferralCode', referralCode);
+            }
+            
+            // Redirect to signup page
+            window.location.href = 'signup.html';
+            
+            /*
+            // OLD CODE - Kept for reference but commented out
             try {
                 // Try to sign in first, if fails, create account
                 let userCredential;
@@ -1450,7 +1463,7 @@
                 // Try to increment attempts BEFORE starting game
                 try {
                     await incrementAttempts();
-                    await loadAttemptsData(); // Reload display (shows ∞ for Pro)
+                    await loadAttemptsData(); // Reload display (shows âˆž for Pro)
                     
                     // Only start game if increment succeeded
                     await updateCurrentRank();
@@ -1469,14 +1482,8 @@
                     }
                     startCountdown();
                 }
-            } catch (error) {
-                console.error('Authentication error:', error);
-                emailError.textContent = 'Authentication failed: ' + error.message;
-                emailError.style.display = 'block';
-                submitNameButton.textContent = 'Submit';
-                submitNameButton.disabled = false;
-                isAuthenticating = false;
-            }
+            */
+            // Authentication is now handled by signup/login pages
         });
 
         // Allow Enter key to submit name
@@ -1528,7 +1535,7 @@
             // Try to increment attempts in Firestore BEFORE starting game
             try {
                 await incrementAttempts();
-                await loadAttemptsData(); // Reload display (shows ∞ for Pro)
+                await loadAttemptsData(); // Reload display (shows âˆž for Pro)
             } catch (error) {
                 console.error('Failed to increment attempts:', error);
                 // If we hit max attempts, show the no attempts screen and stop any game loop
@@ -1672,13 +1679,13 @@
         // Copy result to clipboard
         async function copyResult() {
             const rank = finalRankDisplay.textContent;
-            const shareText = `Sky Fall – Score: ${score}, Rank: ${rank} – Play: https://kamwed.github.io/Falling-Game/`;
+            const shareText = `Sky Fall â€“ Score: ${score}, Rank: ${rank} â€“ Play: https://kamwed.github.io/Falling-Game/`;
             
             try {
                 await navigator.clipboard.writeText(shareText);
-                copyButton.textContent = '✓ Copied!';
+                copyButton.textContent = 'âœ“ Copied!';
                 setTimeout(() => {
-                    copyButton.textContent = '📋 Copy Result';
+                    copyButton.textContent = 'ðŸ“‹ Copy Result';
                 }, 2000);
             } catch (err) {
                 alert('Share text: ' + shareText);
