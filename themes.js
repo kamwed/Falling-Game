@@ -178,11 +178,47 @@ function getAllThemes() {
     return Object.values(GAME_THEMES);
 }
 
+/**
+ * Load custom themes from localStorage and merge with stock themes
+ * @returns {Object.<string, GameTheme>} All themes (stock + custom)
+ */
+function getAllThemesWithCustom() {
+    const allThemes = { ...GAME_THEMES };
+    
+    // Load custom themes from localStorage
+    try {
+        const customThemesJSON = localStorage.getItem('customThemes');
+        if (customThemesJSON) {
+            const customThemes = JSON.parse(customThemesJSON);
+            customThemes.forEach(theme => {
+                allThemes[theme.id] = theme;
+            });
+            console.log(`✅ Loaded ${customThemes.length} custom themes`);
+        }
+    } catch (error) {
+        console.error('Error loading custom themes:', error);
+    }
+    
+    return allThemes;
+}
+
+/**
+ * Get a theme by ID (including custom themes)
+ * @param {string} themeId - Theme identifier
+ * @returns {GameTheme} The requested theme, or default if not found
+ */
+function getThemeWithCustom(themeId) {
+    const allThemes = getAllThemesWithCustom();
+    return allThemes[themeId] || allThemes.default || GAME_THEMES.default;
+}
+
 // Export for use in the game
 if (typeof window !== 'undefined') {
     window.GameThemes = {
         GAME_THEMES,
         getTheme,
+        getThemeWithCustom,
+        getAllThemesWithCustom,
         getAvailableThemeIds,
         getAllThemes
     };

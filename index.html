@@ -574,6 +574,10 @@
             <div class="menu-item-icon">&#9876;</div>
             <div class="menu-item-text">Rivalries</div>
         </div>
+        <div class="menu-item" id="menuThemes">
+            <div class="menu-item-icon">&#127912;</div>
+            <div class="menu-item-text">Themes</div>
+        </div>
         <div class="menu-item" id="menuAttempts">
             <div class="menu-item-icon">&#127915;</div>
             <div class="menu-item-text">Attempts</div>
@@ -683,8 +687,8 @@
         // Current theme ID - can be changed to switch themes
         let currentThemeId = localStorage.getItem('gameTheme') || 'default';
         
-        // Get the current theme object
-        let currentTheme = window.GameThemes ? window.GameThemes.getTheme(currentThemeId) : null;
+        // Get the current theme object (including custom themes)
+        let currentTheme = window.GameThemes ? window.GameThemes.getThemeWithCustom(currentThemeId) : null;
         
         // Fallback if themes.js didn't load
         if (!currentTheme) {
@@ -718,14 +722,15 @@
                 return false;
             }
             
-            const availableThemes = window.GameThemes.getAvailableThemeIds();
-            if (!availableThemes.includes(themeId)) {
-                console.error(`Invalid theme ID: "${themeId}". Available themes:`, availableThemes);
+            // Check if theme exists (stock or custom)
+            const allThemes = window.GameThemes.getAllThemesWithCustom();
+            if (!allThemes[themeId]) {
+                console.error(`Invalid theme ID: "${themeId}". Available themes:`, Object.keys(allThemes));
                 return false;
             }
             
-            // Get the new theme
-            const newTheme = window.GameThemes.getTheme(themeId);
+            // Get the new theme (including custom themes)
+            const newTheme = window.GameThemes.getThemeWithCustom(themeId);
             if (!newTheme) {
                 console.error(`Failed to load theme: ${themeId}`);
                 return false;
@@ -945,6 +950,7 @@
         const menuProfile = document.getElementById('menuProfile');
         const menuPrizes = document.getElementById('menuPrizes');
         const menuRivalries = document.getElementById('menuRivalries');
+        const menuThemes = document.getElementById('menuThemes');
         const menuAttempts = document.getElementById('menuAttempts');
         const menuShare = document.getElementById('menuShare');
         const menuHowToPlay = document.getElementById('menuHowToPlay');
@@ -1001,6 +1007,12 @@
             console.log('Rivalries clicked');
             closeMenu();
             window.location.href = 'rivalries.html';
+        });
+
+        menuThemes.addEventListener('click', () => {
+            console.log('Themes clicked');
+            closeMenu();
+            window.location.href = 'themes-page.html';
         });
 
         menuAttempts.addEventListener('click', () => {
