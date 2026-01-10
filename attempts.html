@@ -276,7 +276,7 @@
 
         <div class="content">
             <h1>🎫 Get More Attempts</h1>
-            <p class="subtitle">Never run out of attempts again! Choose the option that works best for you.</p>
+            <p class="subtitle">Earn free attempts by playing and sharing!</p>
 
             <div id="messageArea" class="message"></div>
 
@@ -296,10 +296,6 @@
                     <span class="status-value" id="totalAttempts">5</span>
                 </div>
                 <div class="status-row">
-                    <span class="status-label">Subscription:</span>
-                    <span class="status-value" id="subscriptionStatus">Free</span>
-                </div>
-                <div class="status-row">
                     <span class="status-label">Your Coins:</span>
                     <span class="status-value" id="userCoins" style="color: #fbbf24;">0 Coins</span>
                 </div>
@@ -309,45 +305,39 @@
             <div class="products-grid">
                 <!-- Coin Purchase Option -->
                 <div class="product-card coins">
-                    <div class="product-icon">&#128176;</div>
-                    <div class="product-name">5 Attempts</div>
-                    <div class="product-description">Use your earned coins to get more attempts!</div>
+                    <div class="product-icon">💰</div>
+                    <div class="product-name">Use Coins</div>
+                    <div class="product-description">Convert your earned coins into bonus attempts</div>
                     <div class="product-price" style="color: #10b981;">100 <span style="font-size: 20px;">Coins</span></div>
-                    <button class="buy-button coins" id="buyCoinAttempts" onclick="buyAttemptsWithCoins()">Buy with Coins</button>
+                    <button class="buy-button" id="buyCoinAttempts" onclick="buyAttemptsWithCoins()" style="background: #10b981;">
+                        Buy 5 Attempts
+                    </button>
                 </div>
 
-                <!-- 10 Attempts Pack -->
-                <div class="product-card">
-                    <div class="product-icon">&#127915;</div>
-                    <div class="product-name">10 Attempts</div>
-                    <div class="product-description">Get 10 extra attempts to use anytime</div>
-                    <div class="product-price"><span class="currency">$</span>0.99</div>
-                    <button class="buy-button" onclick="buyAttemptsPack(10, 0.99)">Buy Now</button>
-                </div>
-
-                <!-- 30 Attempts Pack -->
-                <div class="product-card">
-                    <div class="best-value">BEST VALUE</div>
-                    <div class="product-icon">&#127915;&#127915;</div>
-                    <div class="product-name">30 Attempts</div>
-                    <div class="product-description">Get 30 extra attempts and save!</div>
-                    <div class="product-price"><span class="currency">$</span>3.99</div>
-                    <button class="buy-button" onclick="buyAttemptsPack(30, 3.99)">Buy Now</button>
-                </div>
-
-                <!-- SkyFall Pro -->
+                <!-- Share for Attempts -->
                 <div class="product-card featured">
-                    <div class="product-icon">&#11088;</div>
-                    <div class="product-name">SkyFall Pro</div>
-                    <div class="product-description">Unlimited attempts forever! Never worry about running out.</div>
-                    <div class="product-price"><span class="currency">$</span>5.99<span style="font-size: 16px;">/month</span></div>
-                    <button class="buy-button featured" onclick="buyProSubscription(5.99)">Subscribe Now</button>
+                    <div class="product-icon">🔗</div>
+                    <div class="product-name">Share & Earn</div>
+                    <div class="product-description">Share your code with a friend to get bonus attempts!</div>
+                    <div class="product-price" style="color: #f59e0b;">+5 Attempts</div>
+                    <div style="margin-bottom: 15px; color: #92400e; font-size: 14px;">
+                        Per verified friend who plays
+                    </div>
+                    <button class="buy-button featured" onclick="window.location.href='share.html'">
+                        Get Share Code
+                    </button>
                 </div>
             </div>
 
             <div style="margin-top: 40px; padding: 20px; background: #f3f4f6; border-radius: 8px;">
-                <h3 style="font-size: 18px; margin-bottom: 10px; color: #1f2937;">ðŸ’¡ Pro Tip</h3>
-                <p style="color: #6b7280; line-height: 1.6;">Bonus attempts from referrals and purchases never expire! Earn coins by playing the game and use them to buy more attempts. Share your code with friends to earn free attempts.</p>
+            <div style="margin-top: 40px; padding: 20px; background: #f3f4f6; border-radius: 8px;">
+                <h3 style="font-size: 18px; margin-bottom: 10px; color: #1f2937;">&#128161; How to Get More Attempts</h3>
+                <p style="color: #6b7280; line-height: 1.6; margin-bottom: 10px;">
+                    <strong>Earn Coins:</strong> Collect coins while playing the game, then exchange them for bonus attempts.
+                </p>
+                <p style="color: #6b7280; line-height: 1.6;">
+                    <strong>Share with Friends:</strong> Get 5 bonus attempts for each friend who verifies their email and plays the game using your share code!
+                </p>
             </div>
 
             <div style="margin-top: 40px; text-align: center;">
@@ -387,7 +377,6 @@
         const dailyAttempts = document.getElementById('dailyAttempts');
         const bonusAttemptsEl = document.getElementById('bonusAttempts');
         const totalAttemptsEl = document.getElementById('totalAttempts');
-        const subscriptionStatusEl = document.getElementById('subscriptionStatus');
         const userCoinsEl = document.getElementById('userCoins');
         const buyCoinAttemptsBtn = document.getElementById('buyCoinAttempts');
 
@@ -407,7 +396,7 @@
                 dailyAttempts.textContent = MAX_ATTEMPTS_PER_DAY;
                 bonusAttemptsEl.textContent = '0';
                 totalAttemptsEl.textContent = MAX_ATTEMPTS_PER_DAY;
-                subscriptionStatusEl.textContent = 'Not logged in';
+                
                 return;
             }
 
@@ -428,14 +417,14 @@
                     totalAttemptsEl.textContent = isPro ? 'Unlimited' : (MAX_ATTEMPTS_PER_DAY + bonusAttempts);
                     
                     if (isPro) {
-                        subscriptionStatusEl.innerHTML = '<span class="pro-badge">⭐ PRO</span>';
+                        
                     } else {
-                        subscriptionStatusEl.textContent = 'Free';
+                        
                     }
                 } else {
                     bonusAttemptsEl.textContent = '0';
                     totalAttemptsEl.textContent = MAX_ATTEMPTS_PER_DAY;
-                    subscriptionStatusEl.textContent = 'Free';
+                    
                 }
                 
                 // Load user coins
@@ -563,140 +552,6 @@
         }
 
         // Backend URL
-        const BACKEND_URL = 'https://fallingman.onrender.com';
-
-        // Stripe Price IDs
-        const PRICE_IDS = {
-            attempts10: 'price_1SlzlbLPyAORHNqqW1GGqcPx',  // $0.99 - 10 attempts
-            attempts30: 'price_1SlzlnLPyAORHNqq9aX3UYRh',  // $3.99 - 30 attempts
-            pro: 'price_1Slzm1LPyAORHNqqIrYIhq2f'          // $5.99/month - Pro subscription
-        };
-
-        // Buy attempts pack
-        window.buyAttemptsPack = async function(attempts, price) {
-            try {
-                // Check if user is logged in
-                if (!currentUser) {
-                    showMessage('Please log in to purchase attempts', 'info');
-                    alert('Please log in or create an account to make a purchase.');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                // Determine which price ID to use
-                let priceId;
-                if (attempts === 10) {
-                    priceId = PRICE_IDS.attempts10;
-                } else if (attempts === 30) {
-                    priceId = PRICE_IDS.attempts30;
-                } else {
-                    throw new Error('Invalid attempts pack');
-                }
-
-                console.log('Starting payment flow for:', attempts, 'attempts');
-                console.log('Using price ID:', priceId);
-                console.log('User:', currentUser.uid, currentUser.email);
-                
-                showMessage('Redirecting to checkout...', 'info');
-
-                // Call backend to create checkout session
-                console.log('Calling backend:', `${BACKEND_URL}/create-checkout-session`);
-                
-                const response = await fetch(`${BACKEND_URL}/create-checkout-session`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        priceId,
-                        userEmail: currentUser.email
-                    }),
-                });
-
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Backend error response:', errorData);
-                    throw new Error(errorData.error || `Backend returned ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Response data:', data);
-
-                if (data.url) {
-                    console.log('Redirecting to:', data.url);
-                    // Redirect to Stripe Checkout
-                    window.location.href = data.url;
-                } else {
-                    console.error('No URL in response:', data);
-                    throw new Error('No checkout URL received');
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                showMessage(`Payment failed: ${error.message}`, 'info');
-                alert(`Payment failed: ${error.message}\n\nCheck the browser console for more details.`);
-            }
-        };
-
-        // Buy Pro subscription
-        window.buyProSubscription = async function(price) {
-            try {
-                // Check if user is logged in
-                if (!currentUser) {
-                    showMessage('Please log in to subscribe', 'info');
-                    alert('Please log in or create an account to subscribe to Pro.');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                console.log('Starting Pro subscription flow');
-                console.log('Using price ID:', PRICE_IDS.pro);
-                console.log('User:', currentUser.uid, currentUser.email);
-                
-                showMessage('Redirecting to checkout...', 'info');
-
-                // Call backend to create checkout session
-                console.log('Calling backend:', `${BACKEND_URL}/create-checkout-session`);
-                
-                const response = await fetch(`${BACKEND_URL}/create-checkout-session`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        priceId: PRICE_IDS.pro,
-                        mode: 'subscription',
-                        userEmail: currentUser.email
-                    }),
-                });
-
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Backend error response:', errorData);
-                    throw new Error(errorData.error || `Backend returned ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Response data:', data);
-
-                if (data.url) {
-                    console.log('Redirecting to:', data.url);
-                    // Redirect to Stripe Checkout
-                    window.location.href = data.url;
-                } else {
-                    console.error('No URL in response:', data);
-                    throw new Error('No checkout URL received');
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                showMessage(`Payment failed: ${error.message}`, 'info');
-                alert(`Payment failed: ${error.message}\n\nCheck the browser console for more details.`);
-            }
-        };
-
         // Initialize
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
