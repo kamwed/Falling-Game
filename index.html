@@ -387,7 +387,7 @@
                     <p class="stat">Coins Collected: <span id="finalCoins">0</span></p>
                     <p class="stat">Attempts Used Today: <span id="finalAttempts">1/1</span></p>
                     <div>
-                        <button id="copyButton" class="btn btn-copy">ðŸ“‹ Copy Result</button>
+                        <button id="copyButton" class="btn btn-copy">&#128203; Copy Result</button>
                         <button id="restartButton" class="btn btn-restart">Play Again</button>
                     </div>
                 </div>
@@ -427,8 +427,8 @@
 
     <!-- Mobile Touch Controls -->
     <div class="touch-controls">
-        <div id="leftButton" class="touch-button">â&mdash;€ LEFT</div>
-        <div id="rightButton" class="touch-button">RIGHT â&ndash;¶</div>
+        <div id="leftButton" class="touch-button">&#9664; LEFT</div>
+        <div id="rightButton" class="touch-button">RIGHT &#9654;</div>
     </div>
 
     <!-- Menu Button -->
@@ -1679,13 +1679,14 @@
         // Copy result to clipboard
         async function copyResult() {
             const rank = finalRankDisplay.textContent;
-            const shareText = `Sky Fall â€“ Score: ${score}, Rank: ${rank} â€“ Play: https://kamwed.github.io/Falling-Game/`;
+            const shareText = `Sky Fall — Score: ${score}, Rank: ${rank} — Play: https://kamwed.github.io/Falling-Game/`;
             
             try {
                 await navigator.clipboard.writeText(shareText);
-                copyButton.textContent = 'âœ“ Copied!';
+                copyButton.textContent = '✓ Copied!';
                 setTimeout(() => {
-                    copyButton.textContent = 'ðŸ“‹ Copy Result';
+                    copyButton.textContent = '📋 Copy Result';
+>&#128203; Copy Result</button>
                 }, 2000);
             } catch (err) {
                 alert('Share text: ' + shareText);
