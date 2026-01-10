@@ -244,6 +244,96 @@
             border: 2px solid #fbbf24 !important;
         }
 
+        /* Autocomplete Styles */
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .autocomplete-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .autocomplete-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .autocomplete-input.has-selection {
+            border-color: #22c55e;
+        }
+
+        .autocomplete-input.error {
+            border-color: #ef4444;
+        }
+
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #2563eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+        }
+
+        .autocomplete-suggestions.active {
+            display: block;
+        }
+
+        .autocomplete-suggestion {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background 0.1s;
+        }
+
+        .autocomplete-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-suggestion:hover {
+            background: #f3f4f6;
+        }
+
+        .autocomplete-suggestion.selected {
+            background: #dbeafe;
+        }
+
+        .suggestion-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+
+        .suggestion-location {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .no-suggestions {
+            padding: 12px;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .autocomplete-loading {
+            padding: 12px;
+            color: #6b7280;
+            text-align: center;
+        }
+
         /* Buttons */
         .primary-button {
             width: 100%;
@@ -393,14 +483,19 @@
                     <form id="joinForm" class="join-form">
                         <div class="form-group">
                             <label for="school">School / University</label>
-                            <select 
-                                id="school" 
-                                name="school" 
-                                required
-                            >
-                                <option value="">-- Select your school --</option>
-                            </select>
-                            <div class="form-hint">Select your school or university</div>
+                            <div class="autocomplete-container">
+                                <input 
+                                    type="text"
+                                    id="school" 
+                                    name="school"
+                                    class="autocomplete-input"
+                                    placeholder="Start typing your school name..."
+                                    autocomplete="off"
+                                    required
+                                >
+                                <div id="schoolSuggestions" class="autocomplete-suggestions"></div>
+                            </div>
+                            <div class="form-hint">Type to search for your school or university</div>
                         </div>
 
                         <div class="form-group">
@@ -482,14 +577,19 @@
                         <form id="editForm" class="join-form">
                             <div class="form-group">
                                 <label for="editSchool">School / University</label>
-                                <select 
-                                    id="editSchool" 
-                                    name="editSchool" 
-                                    required
-                                >
-                                    <option value="">-- Select your school --</option>
-                                </select>
-                                <div class="form-hint">Select your school or university</div>
+                                <div class="autocomplete-container">
+                                    <input 
+                                        type="text"
+                                        id="editSchool" 
+                                        name="editSchool"
+                                        class="autocomplete-input"
+                                        placeholder="Start typing your school name..."
+                                        autocomplete="off"
+                                        required
+                                    >
+                                    <div id="editSchoolSuggestions" class="autocomplete-suggestions"></div>
+                                </div>
+                                <div class="form-hint">Type to search for your school or university</div>
                             </div>
 
                             <div class="form-group">
@@ -522,6 +622,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Load Schools Data -->
+    <script src="data/schools.js"></script>
 
     <script type="module">
         // =============================================================================
@@ -726,6 +829,11 @@
         let userData = null;
         let isEditMode = false; // Track if user is editing their school/frat
 
+        // Autocomplete state
+        let selectedSchool = null; // Stores { id, name, city, state }
+        let selectedEditSchool = null; // For edit mode
+        let searchTimeout = null;
+
         // DOM elements
         const loadingOverlay = document.getElementById('loadingOverlay');
         const notLoggedInState = document.getElementById('notLoggedInState');
@@ -753,22 +861,146 @@
             }, 5000);
         }
 
-        // Populate school and frat dropdowns
+        // =============================================================================
+        // AUTOCOMPLETE FUNCTIONALITY
+        // =============================================================================
+
+        /**
+         * Initialize autocomplete for a school input
+         * @param {string} inputId - ID of the input element
+         * @param {string} suggestionsId - ID of the suggestions container
+         * @param {function} onSelect - Callback when a school is selected
+         */
+        function initializeAutocomplete(inputId, suggestionsId, onSelect) {
+            const input = document.getElementById(inputId);
+            const suggestionsContainer = document.getElementById(suggestionsId);
+            let currentFocus = -1;
+
+            if (!input || !suggestionsContainer) {
+                console.error('Autocomplete elements not found:', inputId, suggestionsId);
+                return;
+            }
+
+            // Handle input changes
+            input.addEventListener('input', function() {
+                const query = this.value;
+                currentFocus = -1;
+
+                // Clear timeout for debouncing
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+
+                // Clear selection when typing
+                if (inputId === 'school') {
+                    selectedSchool = null;
+                    input.classList.remove('has-selection');
+                } else if (inputId === 'editSchool') {
+                    selectedEditSchool = null;
+                    input.classList.remove('has-selection');
+                }
+
+                // Hide suggestions if query is too short
+                if (!query || query.length < 2) {
+                    suggestionsContainer.classList.remove('active');
+                    suggestionsContainer.innerHTML = '';
+                    return;
+                }
+
+                // Debounce search (250ms delay)
+                searchTimeout = setTimeout(() => {
+                    const results = window.SchoolsData.searchSchools(query, 10);
+                    displaySuggestions(results, suggestionsContainer, input, onSelect);
+                }, 250);
+            });
+
+            // Handle keyboard navigation
+            input.addEventListener('keydown', function(e) {
+                const suggestions = suggestionsContainer.getElementsByClassName('autocomplete-suggestion');
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    currentFocus++;
+                    addActive(suggestions, currentFocus);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    currentFocus--;
+                    addActive(suggestions, currentFocus);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (currentFocus > -1 && suggestions[currentFocus]) {
+                        suggestions[currentFocus].click();
+                    }
+                } else if (e.key === 'Escape') {
+                    suggestionsContainer.classList.remove('active');
+                    suggestionsContainer.innerHTML = '';
+                }
+            });
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (e.target !== input && !suggestionsContainer.contains(e.target)) {
+                    suggestionsContainer.classList.remove('active');
+                }
+            });
+
+            function addActive(suggestions, index) {
+                if (!suggestions || suggestions.length === 0) return;
+                removeActive(suggestions);
+                if (index >= suggestions.length) currentFocus = 0;
+                if (index < 0) currentFocus = suggestions.length - 1;
+                if (suggestions[currentFocus]) {
+                    suggestions[currentFocus].classList.add('selected');
+                }
+            }
+
+            function removeActive(suggestions) {
+                for (let i = 0; i < suggestions.length; i++) {
+                    suggestions[i].classList.remove('selected');
+                }
+            }
+        }
+
+        /**
+         * Display autocomplete suggestions
+         */
+        function displaySuggestions(results, container, input, onSelect) {
+            container.innerHTML = '';
+
+            if (results.length === 0) {
+                container.innerHTML = '<div class="no-suggestions">No schools found. Try a different search.</div>';
+                container.classList.add('active');
+                return;
+            }
+
+            results.forEach(school => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-suggestion';
+                div.innerHTML = `
+                    <div class="suggestion-name">${school.name}</div>
+                    <div class="suggestion-location">${school.city}, ${school.state}</div>
+                `;
+                
+                div.addEventListener('click', function() {
+                    input.value = school.name;
+                    input.classList.add('has-selection');
+                    container.classList.remove('active');
+                    container.innerHTML = '';
+                    onSelect(school);
+                });
+
+                container.appendChild(div);
+            });
+
+            container.classList.add('active');
+        }
+
+        // Populate frat dropdown (unchanged)
         function populateDropdowns() {
-            const schoolSelect = document.getElementById('school');
             const fratSelect = document.getElementById('frat');
 
-            // Clear existing options (except the placeholder)
-            schoolSelect.innerHTML = '<option value="">-- Select your school --</option>';
+            // Clear existing frat options
             fratSelect.innerHTML = '<option value="">-- Select your fraternity/sorority --</option>';
-
-            // Add school options
-            SCHOOLS.forEach(school => {
-                const option = document.createElement('option');
-                option.value = school;
-                option.textContent = school;
-                schoolSelect.appendChild(option);
-            });
 
             // Add frat options
             FRATS.forEach(frat => {
@@ -778,7 +1010,13 @@
                 fratSelect.appendChild(option);
             });
 
-            console.log('Populated dropdowns:', { schools: SCHOOLS.length, frats: FRATS.length });
+            // Initialize autocomplete for school input
+            initializeAutocomplete('school', 'schoolSuggestions', (school) => {
+                selectedSchool = school;
+                console.log('School selected:', school);
+            });
+
+            console.log('Populated frat dropdown and initialized school autocomplete');
         }
 
         // Load user data from Firestore
@@ -1018,11 +1256,22 @@
         window.enterEditMode = function() {
             isEditMode = true;
             
-            // Populate edit dropdowns
+            // Populate edit dropdowns and autocomplete
             populateEditDropdowns();
             
-            // Pre-fill with current values
-            document.getElementById('editSchool').value = userData.school;
+            // Pre-fill school autocomplete with current value
+            const editSchoolInput = document.getElementById('editSchool');
+            editSchoolInput.value = userData.school;
+            editSchoolInput.classList.add('has-selection');
+            
+            // Set selected school object (find by name)
+            selectedEditSchool = window.SchoolsData.getSchoolByName(userData.school);
+            if (!selectedEditSchool) {
+                // If not found in new list, create a placeholder
+                selectedEditSchool = { id: 'legacy', name: userData.school, city: '', state: '' };
+            }
+            
+            // Pre-fill frat dropdown
             document.getElementById('editFrat').value = userData.frat;
             
             // Toggle visibility
@@ -1055,20 +1304,10 @@
          * Populate the edit mode dropdowns
          */
         function populateEditDropdowns() {
-            const editSchoolSelect = document.getElementById('editSchool');
             const editFratSelect = document.getElementById('editFrat');
             
-            // Clear existing options (except the placeholder)
-            editSchoolSelect.innerHTML = '<option value="">-- Select your school --</option>';
+            // Clear existing frat options
             editFratSelect.innerHTML = '<option value="">-- Select your fraternity/sorority --</option>';
-            
-            // Add school options
-            SCHOOLS.forEach(school => {
-                const option = document.createElement('option');
-                option.value = school;
-                option.textContent = school;
-                editSchoolSelect.appendChild(option);
-            });
             
             // Add frat options
             FRATS.forEach(frat => {
@@ -1076,6 +1315,12 @@
                 option.value = frat;
                 option.textContent = frat;
                 editFratSelect.appendChild(option);
+            });
+
+            // Initialize autocomplete for edit school input
+            initializeAutocomplete('editSchool', 'editSchoolSuggestions', (school) => {
+                selectedEditSchool = school;
+                console.log('Edit school selected:', school);
             });
         }
 
@@ -1103,15 +1348,17 @@
                 return;
             }
 
-            const newSchool = document.getElementById('editSchool').value;
-            const newFrat = document.getElementById('editFrat').value;
-
-            // Validate both fields are selected
-            if (!newSchool || newSchool === '') {
-                showEditMessage('Please select a school', 'error');
+            // Validate school selection from autocomplete
+            if (!selectedEditSchool || !selectedEditSchool.name) {
+                showEditMessage('Please select a school from the list', 'error');
+                document.getElementById('editSchool').classList.add('error');
                 return;
             }
 
+            const newSchool = selectedEditSchool.name; // Use the selected school's name
+            const newFrat = document.getElementById('editFrat').value;
+
+            // Validate frat selection
             if (!newFrat || newFrat === '') {
                 showEditMessage('Please select a fraternity/sorority', 'error');
                 return;
@@ -1181,15 +1428,17 @@
                 return;
             }
 
-            const school = document.getElementById('school').value;
-            const frat = document.getElementById('frat').value;
-
-            // Validate both fields are selected
-            if (!school || school === '') {
-                showMessage('Please select a school', 'error');
+            // Validate school selection from autocomplete
+            if (!selectedSchool || !selectedSchool.name) {
+                showMessage('Please select a school from the list', 'error');
+                document.getElementById('school').classList.add('error');
                 return;
             }
 
+            const school = selectedSchool.name; // Use the selected school's name
+            const frat = document.getElementById('frat').value;
+
+            // Validate frat selection
             if (!frat || frat === '') {
                 showMessage('Please select a fraternity/sorority', 'error');
                 return;
