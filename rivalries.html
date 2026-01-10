@@ -423,41 +423,97 @@
             <!-- State 3: Joined -->
             <div id="joinedState" class="state-container">
                 <div class="joined">
-                    <h2>Representing <span id="displayFrat"></span> at <span id="displaySchool"></span></h2>
+                    <!-- View Mode -->
+                    <div id="viewMode">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                            <h2 style="margin: 0;">Representing <span id="displayFrat"></span> at <span id="displaySchool"></span></h2>
+                            <button 
+                                onclick="enterEditMode()" 
+                                style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"
+                                onmouseover="this.style.background='#4b5563'" 
+                                onmouseout="this.style.background='#6b7280'"
+                            >
+                                Edit
+                            </button>
+                        </div>
 
-                    <!-- Individual Rank Section -->
-                    <div class="rivalry-info">
-                        <div style="font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px;">
-                            &#128100; Your Individual Rank
+                        <!-- Individual Rank Section -->
+                        <div class="rivalry-info">
+                            <div style="font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px;">
+                                &#128100; Your Individual Rank
+                            </div>
+                            <div id="individualRankDisplay" style="font-size: 16px; color: #4b5563;">
+                                Loading...
+                            </div>
                         </div>
-                        <div id="individualRankDisplay" style="font-size: 16px; color: #4b5563;">
-                            Loading...
+
+                        <!-- Frat Rank Section -->
+                        <div class="rivalry-info">
+                            <div style="font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px;">
+                                &#9876; Your Frat's Rank
+                            </div>
+                            <div id="fratRankDisplay" style="font-size: 16px; color: #4b5563;">
+                                Loading...
+                            </div>
                         </div>
+
+                        <!-- TopSeat Section -->
+                        <div class="rivalry-info" id="topSeatSection">
+                            <div style="font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px;">
+                                &#127942; TopSeat
+                            </div>
+                            <div id="topSeatDisplay" style="font-size: 16px; color: #4b5563;">
+                                Loading...
+                            </div>
+                        </div>
+
+                        <button class="secondary-button" onclick="leaveRivalries()" style="display: block; margin: 20px auto 0;">
+                            Leave Rivalries
+                        </button>
                     </div>
 
-                    <!-- Frat Rank Section -->
-                    <div class="rivalry-info">
-                        <div style="font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px;">
-                            &#9876; Your Frat's Rank
-                        </div>
-                        <div id="fratRankDisplay" style="font-size: 16px; color: #4b5563;">
-                            Loading...
-                        </div>
-                    </div>
+                    <!-- Edit Mode -->
+                    <div id="editMode" style="display: none;">
+                        <h2 style="margin-bottom: 10px;">Edit Your Affiliation</h2>
+                        <p style="color: #6b7280; margin-bottom: 30px;">Update your school and fraternity/sorority</p>
 
-                    <!-- TopSeat Section -->
-                    <div class="rivalry-info" id="topSeatSection">
-                        <div style="font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px;">
-                            &#127942; TopSeat
-                        </div>
-                        <div id="topSeatDisplay" style="font-size: 16px; color: #4b5563;">
-                            Loading...
-                        </div>
-                    </div>
+                        <div id="editMessageArea" class="message" style="margin-bottom: 20px;"></div>
 
-                    <button class="secondary-button" onclick="leaveRivalries()" style="display: block; margin: 20px auto 0;">
-                        Leave Rivalries
-                    </button>
+                        <form id="editForm" class="join-form">
+                            <div class="form-group">
+                                <label for="editSchool">School / University</label>
+                                <select 
+                                    id="editSchool" 
+                                    name="editSchool" 
+                                    required
+                                >
+                                    <option value="">-- Select your school --</option>
+                                </select>
+                                <div class="form-hint">Select your school or university</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editFrat">Fraternity / Sorority</label>
+                                <select 
+                                    id="editFrat" 
+                                    name="editFrat" 
+                                    required
+                                >
+                                    <option value="">-- Select your fraternity/sorority --</option>
+                                </select>
+                                <div class="form-hint">Select your fraternity or sorority</div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button type="submit" class="primary-button" id="saveButton" style="flex: 1;">
+                                    Save Changes
+                                </button>
+                                <button type="button" class="secondary-button" onclick="cancelEdit()" style="flex: 1;">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
@@ -668,6 +724,7 @@
 
         let currentUser = null;
         let userData = null;
+        let isEditMode = false; // Track if user is editing their school/frat
 
         // DOM elements
         const loadingOverlay = document.getElementById('loadingOverlay');
@@ -937,9 +994,178 @@
             document.getElementById('displayFrat').textContent = userData.frat;
             joinedState.classList.add('active');
             
+            // Ensure we're in view mode (not edit mode) when loading state
+            isEditMode = false;
+            document.getElementById('viewMode').style.display = 'block';
+            document.getElementById('editMode').style.display = 'none';
+            
             // Load and display rivalry rankings
             await displayRivalryRankings(currentUser.uid, userData.school, userData.frat);
         }
+
+        // Go to login page
+        window.goToLogin = function() {
+            window.location.href = 'login.html';
+        };
+
+        // =============================================================================
+        // EDIT MODE FUNCTIONS
+        // =============================================================================
+
+        /**
+         * Enter edit mode - show the edit form with current values
+         */
+        window.enterEditMode = function() {
+            isEditMode = true;
+            
+            // Populate edit dropdowns
+            populateEditDropdowns();
+            
+            // Pre-fill with current values
+            document.getElementById('editSchool').value = userData.school;
+            document.getElementById('editFrat').value = userData.frat;
+            
+            // Toggle visibility
+            document.getElementById('viewMode').style.display = 'none';
+            document.getElementById('editMode').style.display = 'block';
+            
+            // Clear any previous messages
+            const editMessageArea = document.getElementById('editMessageArea');
+            editMessageArea.className = 'message';
+            editMessageArea.textContent = '';
+        };
+
+        /**
+         * Cancel edit mode - return to view mode without saving
+         */
+        window.cancelEdit = function() {
+            isEditMode = false;
+            
+            // Toggle visibility
+            document.getElementById('editMode').style.display = 'none';
+            document.getElementById('viewMode').style.display = 'block';
+            
+            // Clear any messages
+            const editMessageArea = document.getElementById('editMessageArea');
+            editMessageArea.className = 'message';
+            editMessageArea.textContent = '';
+        };
+
+        /**
+         * Populate the edit mode dropdowns
+         */
+        function populateEditDropdowns() {
+            const editSchoolSelect = document.getElementById('editSchool');
+            const editFratSelect = document.getElementById('editFrat');
+            
+            // Clear existing options (except the placeholder)
+            editSchoolSelect.innerHTML = '<option value="">-- Select your school --</option>';
+            editFratSelect.innerHTML = '<option value="">-- Select your fraternity/sorority --</option>';
+            
+            // Add school options
+            SCHOOLS.forEach(school => {
+                const option = document.createElement('option');
+                option.value = school;
+                option.textContent = school;
+                editSchoolSelect.appendChild(option);
+            });
+            
+            // Add frat options
+            FRATS.forEach(frat => {
+                const option = document.createElement('option');
+                option.value = frat;
+                option.textContent = frat;
+                editFratSelect.appendChild(option);
+            });
+        }
+
+        /**
+         * Show message in edit mode
+         */
+        function showEditMessage(text, type) {
+            const editMessageArea = document.getElementById('editMessageArea');
+            editMessageArea.textContent = text;
+            editMessageArea.className = `message ${type}`;
+            setTimeout(() => {
+                editMessageArea.className = 'message';
+                editMessageArea.textContent = '';
+            }, 5000);
+        }
+
+        /**
+         * Handle edit form submission
+         */
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!currentUser) {
+                showEditMessage('Please log in first', 'error');
+                return;
+            }
+
+            const newSchool = document.getElementById('editSchool').value;
+            const newFrat = document.getElementById('editFrat').value;
+
+            // Validate both fields are selected
+            if (!newSchool || newSchool === '') {
+                showEditMessage('Please select a school', 'error');
+                return;
+            }
+
+            if (!newFrat || newFrat === '') {
+                showEditMessage('Please select a fraternity/sorority', 'error');
+                return;
+            }
+
+            const saveButton = document.getElementById('saveButton');
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving...';
+            showLoading();
+
+            try {
+                // Update user data in Firestore
+                const userRef = doc(db, 'users', currentUser.uid);
+                await setDoc(userRef, {
+                    school: newSchool,
+                    frat: newFrat,
+                    rivalryOptIn: true, // Keep them opted in
+                    rivalryUpdatedAt: Timestamp.now()
+                }, { merge: true });
+
+                console.log('Successfully updated affiliation:', { newSchool, newFrat });
+
+                // Reload user data
+                userData = await loadUserData(currentUser.uid);
+
+                // Exit edit mode
+                isEditMode = false;
+                document.getElementById('editMode').style.display = 'none';
+                document.getElementById('viewMode').style.display = 'block';
+
+                // Update display in view mode
+                document.getElementById('displaySchool').textContent = newSchool;
+                document.getElementById('displayFrat').textContent = newFrat;
+
+                // Reload rankings with new school/frat
+                await displayRivalryRankings(currentUser.uid, newSchool, newFrat);
+
+                showEditMessage('Successfully updated!', 'success');
+
+            } catch (error) {
+                console.error('Error updating affiliation:', error);
+                showEditMessage('Failed to save changes. Please try again.', 'error');
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Changes';
+            } finally {
+                hideLoading();
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Changes';
+            }
+        });
+
+        // =============================================================================
+        // JOIN RIVALRIES FORM HANDLER
+        // =============================================================================
 
         // Go to login page
         window.goToLogin = function() {
