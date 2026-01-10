@@ -1084,6 +1084,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        
+        // Import event logging system
+        import { initEventLogger, logJoinedRivalries } from './event-logger.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -1099,6 +1102,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        
+        // Initialize event logger
+        initEventLogger(db);
 
         // =============================================================================
         // HARDCODED RIVALRY OPTIONS
@@ -1903,6 +1909,19 @@
             }, { merge: true });
 
             console.log('[persistRivalryJoin] Saved to Firestore:', { uid, school, frat, rivalryOptIn: true });
+            
+            // Log joined rivalries event
+            try {
+                const userContext = {
+                    userId: uid,
+                    email: currentUser?.email || null,
+                    school: school,
+                    frat: frat
+                };
+                await logJoinedRivalries(userContext);
+            } catch (error) {
+                console.error('Error logging rivalry join:', error);
+            }
         }
 
         // =============================================================================

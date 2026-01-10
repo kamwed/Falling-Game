@@ -488,6 +488,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, doc, setDoc, getDoc, runTransaction, Timestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        
+        // Import event logging system
+        import { initEventLogger, getUserContext, logGameStarted, logScoreSubmitted } from './event-logger.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -503,6 +506,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        
+        // Initialize event logger
+        initEventLogger(db);
 
         // Game constants
         const PLAYER_SIZE = 30;
@@ -1517,6 +1523,14 @@
             // Update level display to show current saved level
             levelDisplay.textContent = currentLevel;
             
+            // Log game started event
+            try {
+                const userContext = await getUserContext(currentUser, db);
+                await logGameStarted(userContext, currentLevel);
+            } catch (error) {
+                console.error('Error logging game start:', error);
+            }
+            
             await updateCurrentRank();
             await gameLoop();
         }
@@ -1836,6 +1850,14 @@
                 console.log('Rank calculation:', { rank, totalPlayers, playerBestScore });
 
                 console.log('Final stats:', { rank, totalPlayers });
+                
+                // Log score submitted event
+                try {
+                    const userContext = await getUserContext(currentUser, db);
+                    await logScoreSubmitted(userContext, score, currentLevel, currency);
+                } catch (error) {
+                    console.error('Error logging score submission:', error);
+                }
 
                 return {
                     rank,
