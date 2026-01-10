@@ -188,14 +188,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">🎮 Sky Fall</div>
+            <div class="logo">&#127918; Sky Fall</div>
             <div class="tagline">Compete for real cash prizes!</div>
         </div>
 
-        <a href="index.html" class="back-button">⬅ Back to Game</a>
+        <a href="index.html" class="back-button">&larr; Back to Game</a>
 
         <div class="content">
-            <h1>🏆 Prizes</h1>
+            <h1>&#127942; Prizes</h1>
 
             <div class="prize-box">
                 <div class="prize-amount">$50</div>
@@ -204,7 +204,7 @@
 
             <!-- Referral Prizes Section -->
             <div style="margin: 40px 0;">
-                <h2 style="text-align: center; color: #2563eb; margin-bottom: 30px;">💰 Referral Rewards</h2>
+                <h2 style="text-align: center; color: #2563eb; margin-bottom: 30px;">&#128176; Referral Rewards</h2>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
                     <!-- $25 Prize -->
@@ -239,7 +239,7 @@
                     
                     <!-- Earned Rewards Display -->
                     <div id="earnedRewards" style="display: none; margin-top: 20px; padding: 20px; background: rgba(255, 255, 255, 0.2); border-radius: 8px;">
-                        <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">🎉 Rewards Earned!</div>
+                        <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">&#127881; Rewards Earned!</div>
                         <div id="rewardsList" style="font-size: 16px;"></div>
                     </div>
                     
@@ -263,7 +263,7 @@
 
             <!-- Countdown Timer Section -->
             <div id="countdownSection" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center; color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);">
-                <h2 style="font-size: 24px; margin-bottom: 15px; color: white;">⏱️ Time Until Next Payout</h2>
+                <h2 style="font-size: 24px; margin-bottom: 15px; color: white;">â±ï¸ Time Until Next Payout</h2>
                 <div id="leaderInfo" style="font-size: 18px; margin-bottom: 20px; opacity: 0.9;">Loading current leader...</div>
                 <div id="countdownTimer" style="font-size: 48px; font-weight: bold; font-family: monospace; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">--:--:--</div>
                 <div id="countdownStatus" style="font-size: 16px; opacity: 0.9;">Next payout: Friday at 12:00 AM EST</div>
@@ -271,7 +271,7 @@
 
             <!-- Winner Message (hidden by default) -->
             <div id="winnerMessage" style="display: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center; color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-                <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+                <div style="font-size: 48px; margin-bottom: 15px;">&#127881;</div>
                 <h2 style="font-size: 32px; margin-bottom: 15px; color: white;">You're in the Lead!</h2>
                 <div id="winnerText" style="font-size: 20px; margin-bottom: 20px;">You have the highest score this week!</div>
                 <div style="font-size: 18px; opacity: 0.9;">Keep your score at #1 until Friday at 12:00 AM EST to win $50!</div>
@@ -284,7 +284,7 @@
                 <ul>
                     <li><strong>Weekly Competition:</strong> Every Friday at 12:00 AM EST, the player with the highest score on the global leaderboard wins $50.</li>
                     <li><strong>Simple Rules:</strong> Just have the #1 score when the timer hits zero on Friday at midnight.</li>
-                    <li><strong>Fresh Start:</strong> After each payout, the competition resets and a new week begins. Everyone has a chance to win!</li>
+                    <li><strong>Fresh Start:</strong> After each payout, only scores are reset. Your account, coins, bonus attempts, and subscription remain intact!</li>
                 </ul>
             </div>
 
@@ -293,18 +293,19 @@
 
             <h2>Competition Rules</h2>
             <ul>
-                <li>Only legitimate gameplay counts—any cheating or exploitation will result in disqualification.</li>
+                <li>Only legitimate gameplay counts&mdash;any cheating or exploitation will result in disqualification.</li>
                 <li>One $50 prize is awarded every Friday at 12:00 AM EST to the player with the highest score.</li>
                 <li>You must have a verified email address to be eligible for prizes.</li>
                 <li>Players can win multiple weeks in a row if they maintain the #1 position.</li>
+                <li><strong>What Happens at Reset:</strong> Only scores are cleared each week. Your account, coins, bonus attempts, and Pro subscription are never reset!</li>
             </ul>
 
             <p style="margin-top: 30px; font-size: 20px; font-weight: bold; text-align: center; color: #2563eb;">
-                Ready to compete? Good luck! 🎮
+                Ready to compete? Good luck! &#127918;
             </p>
 
             <div style="margin-top: 40px; text-align: center;">
-                <a href="index.html" class="back-button">Start Playing Now! 🏆</a>
+                <a href="index.html" class="back-button">Start Playing Now! &#127942;</a>
             </div>
         </div>
     </div>
@@ -385,9 +386,11 @@
         }
 
         // Process payout: record winner, clear scores, reset for next week
+        // PRESERVES: user accounts, coins, bonus attempts, subscriptions, referrals
+        // CLEARS: only scores collection
         async function processPayout(winner) {
             try {
-                console.log('Processing payout for:', winner);
+                console.log('&#127942; Processing weekly payout for:', winner);
                 
                 // Calculate next Friday
                 const nextFriday = getNextFridayMidnight();
@@ -411,7 +414,10 @@
                     wonAt: Timestamp.now()
                 });
                 
-                // Clear all scores for new week
+                console.log('&#128200; Clearing all scores for new competition week...');
+                
+                // Clear ONLY the scores collection for new week
+                // User accounts, coins, attempts, and subscriptions are preserved
                 const scoresSnapshot = await getDocs(collection(db, 'scores'));
                 const batch = [];
                 
@@ -427,10 +433,18 @@
                     await deleteBatch.commit();
                 }
                 
-                console.log('Payout processed: winner recorded, scores cleared');
+                console.log(`&#9989; Payout processed successfully!`);
+                console.log(`   - Winner recorded: ${winner.name} (${winner.score} points)`);
+                console.log(`   - ${scoresSnapshot.size} scores cleared`);
+                console.log(`   - User accounts PRESERVED`);
+                console.log(`   - Coins PRESERVED`);
+                console.log(`   - Bonus attempts PRESERVED`);
+                console.log(`   - Subscriptions PRESERVED`);
+                console.log(`   - New competition starts now!`);
+                
                 return true;
             } catch (error) {
-                console.error('Error processing payout:', error);
+                console.error('❌ Error processing payout:', error);
                 return false;
             }
         }
@@ -529,7 +543,7 @@
                 // Show winner message if it's the current user
                 if (currentUser && currentUser.uid === weekWinner.uid) {
                     winnerMessage.style.display = 'block';
-                    winnerText.textContent = `🎉 You won last week with ${weekWinner.score.toLocaleString()} points! Your $50 prize is being processed.`;
+                    winnerText.textContent = `&#127881; You won last week with ${weekWinner.score.toLocaleString()} points! Your $50 prize is being processed.`;
                 } else {
                     winnerMessage.style.display = 'none';
                 }
@@ -674,7 +688,7 @@
             let milestoneText = '';
             
             if (validCount >= 25) {
-                milestoneText = '🎉 Maximum rewards unlocked!';
+                milestoneText = '&#127881; Maximum rewards unlocked!';
             } else if (validCount >= 10) {
                 milestoneText = `${25 - validCount} more verified friends to earn $50!`;
             } else {
@@ -683,7 +697,7 @@
             
             // Show pending referrals info if any
             if (pendingCount > 0) {
-                milestoneText += `<br><br>⏳ <strong>${pendingCount} pending referral${pendingCount > 1 ? 's' : ''}</strong><br>`;
+                milestoneText += `<br><br>â³ <strong>${pendingCount} pending referral${pendingCount > 1 ? 's' : ''}</strong><br>`;
                 milestoneText += '<span style="font-size: 14px; opacity: 0.8;">These will count when your friends verify their email and play the game.</span>';
             }
             
@@ -695,10 +709,10 @@
             const rewards = [];
             
             if (validCount >= 10) {
-                rewards.push('✅ $25 - 10 Friends Milestone');
+                rewards.push('&#9989; $25 - 10 Friends Milestone');
             }
             if (validCount >= 25) {
-                rewards.push('✅ $50 - 25 Friends Milestone');
+                rewards.push('&#9989; $50 - 25 Friends Milestone');
             }
             
             if (rewards.length > 0) {

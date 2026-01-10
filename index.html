@@ -556,9 +556,9 @@
                         fallSpeed *= 1.25;
                     }
                     
-                    console.log('âœ… Loaded progress from Firestore:', { currentLevel, fallSpeed, rawData: progress });
+                    console.log('[OK] Loaded progress from Firestore:', { currentLevel, fallSpeed, rawData: progress });
                 } else {
-                    console.log('âš ï¸ No saved progress found in Firestore, starting at level 1');
+                    console.log('[WARN] No saved progress found in Firestore, starting at level 1');
                     currentLevel = 1;
                     fallSpeed = 2;
                 }
@@ -573,12 +573,12 @@
         // Save progress to Firestore
         async function saveProgress() {
             if (!currentUser) {
-                console.log('âš ï¸ No user authenticated, cannot save progress');
+                console.log('[WARN] No user authenticated, cannot save progress');
                 return;
             }
             
             try {
-                console.log('ðŸ’¾ Saving progress for user:', currentUser.uid, 'Level:', currentLevel);
+                console.log('[SAVE] Saving progress for user:', currentUser.uid, 'Level:', currentLevel);
                 const progressRef = doc(db, 'userProgress', currentUser.uid);
                 const progress = {
                     uid: currentUser.uid,
@@ -588,7 +588,7 @@
                 };
                 
                 await setDoc(progressRef, progress);
-                console.log('âœ… Progress saved to Firestore successfully:', progress);
+                console.log('[OK] Progress saved to Firestore successfully:', progress);
             } catch (error) {
                 console.error('âŒ Error saving progress to Firestore:', error);
             }
@@ -753,14 +753,14 @@
         // Create or get user's share code
         async function ensureUserShareCode(uid) {
             try {
-                console.log('ðŸ” Ensuring share code for UID:', uid);
+                console.log('[SEARCH] Ensuring share code for UID:', uid);
                 const userRef = doc(db, 'users', uid);
                 const userDoc = await getDoc(userRef);
                 
-                console.log('ðŸ“„ User doc exists:', userDoc.exists());
+                console.log('[DOC] User doc exists:', userDoc.exists());
                 
                 if (userDoc.exists() && userDoc.data().shareCode) {
-                    console.log('âœ… Found existing share code:', userDoc.data().shareCode);
+                    console.log('[OK] Found existing share code:', userDoc.data().shareCode);
                     return userDoc.data().shareCode;
                 }
                 
@@ -785,7 +785,7 @@
                     }
                 }
                 
-                console.log('ðŸ’¾ Saving share code to Firestore:', shareCode);
+                console.log('[SAVE] Saving share code to Firestore:', shareCode);
                 
                 // Save the share code
                 await setDoc(userRef, {
@@ -795,7 +795,7 @@
                     createdAt: Timestamp.now()
                 }, { merge: true });
                 
-                console.log('âœ… Share code saved successfully:', shareCode);
+                console.log('[OK] Share code saved successfully:', shareCode);
                 return shareCode;
             } catch (error) {
                 console.error('âŒ Error ensuring share code:', error);
@@ -909,7 +909,7 @@
                     });
                 });
                 
-                console.log('âœ… Referral successful! Awarded 5 bonus attempts to referrer');
+                console.log('[OK] Referral successful! Awarded 5 bonus attempts to referrer');
             } catch (error) {
                 console.error('Error processing referral:', error);
             }
@@ -1579,6 +1579,9 @@
         }
 
         // Save score to Firestore and get global stats
+        // Save score to Firestore and get global stats
+        // NOTE: Scores in the 'scores' collection are cleared every Friday at 12:00 AM EST
+        // User accounts, coins, progress, and subscriptions are NEVER cleared
         async function saveScoreAndGetStats() {
             try {
                 console.log('Saving score to Firestore...', { uid: currentUser.uid, email: playerEmail, name: playerName, score });
