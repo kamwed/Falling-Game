@@ -281,6 +281,35 @@
                 <div style="text-align: center; color: #9ca3af; font-size: 14px; margin-top: 20px;">
                     Last updated: <span id="lastUpdated">--</span>
                 </div>
+
+                <!-- Rivalry Rankings Section -->
+                <div style="margin-top: 50px;">
+                    <h2 style="font-size: 24px; color: #1f2937; margin-bottom: 30px; font-weight: 600; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                        🏆 Rivalry Rankings (Last 7 Days)
+                    </h2>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px;">
+                        <!-- Top Schools -->
+                        <div>
+                            <h3 style="font-size: 18px; color: #374151; margin-bottom: 15px; font-weight: 600;">
+                                🎓 Top Schools by Attempts
+                            </h3>
+                            <div id="topSchoolsTable" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                                <!-- Table content will be inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- Top Frats -->
+                        <div>
+                            <h3 style="font-size: 18px; color: #374151; margin-bottom: 15px; font-weight: 600;">
+                                🏛️ Top Frats by Attempts
+                            </h3>
+                            <div id="topFratsTable" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                                <!-- Table content will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Error State -->
@@ -485,6 +514,225 @@
         }
 
         /**
+         * Get Top Schools by Attempts (Last 7 Days)
+         * Groups game_started events by school and counts attempts
+         * Returns top 5 schools sorted by attempt count
+         */
+        async function getTopSchoolsByAttempts() {
+            try {
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                
+                const eventsRef = collection(db, 'events');
+                const q = query(
+                    eventsRef,
+                    where('eventType', '==', 'game_started'),
+                    where('timestamp', '>=', Timestamp.fromDate(sevenDaysAgo))
+                );
+                
+                const snapshot = await getDocs(q);
+                
+                // Count attempts per school
+                const schoolCounts = {};
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const school = data.school;
+                    
+                    // Only count if school is set (not null/undefined/empty)
+                    if (school && school.trim() !== '') {
+                        if (!schoolCounts[school]) {
+                            schoolCounts[school] = 0;
+                        }
+                        schoolCounts[school]++;
+                    }
+                });
+                
+                // Convert to array and sort by count descending
+                const sortedSchools = Object.entries(schoolCounts)
+                    .map(([school, count]) => ({ school, count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 5); // Top 5
+                
+                console.log('📊 Top Schools:', sortedSchools);
+                return sortedSchools;
+            } catch (error) {
+                console.error('Error fetching top schools:', error);
+                return [];
+            }
+        }
+
+        /**
+         * Get Top Frats by Attempts (Last 7 Days)
+         * Groups game_started events by frat and counts attempts
+         * Returns top 5 frats sorted by attempt count
+         */
+        async function getTopFratsByAttempts() {
+            try {
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                
+                const eventsRef = collection(db, 'events');
+                const q = query(
+                    eventsRef,
+                    where('eventType', '==', 'game_started'),
+                    where('timestamp', '>=', Timestamp.fromDate(sevenDaysAgo))
+                );
+                
+                const snapshot = await getDocs(q);
+                
+                // Count attempts per frat, also track schools
+                const fratData = {};
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const frat = data.frat;
+                    const school = data.school;
+                    
+                    // Only count if frat is set (not null/undefined/empty)
+                    if (frat && frat.trim() !== '') {
+                        if (!fratData[frat]) {
+                            fratData[frat] = {
+                                count: 0,
+                                schools: new Set()
+                            };
+                        }
+                        fratData[frat].count++;
+                        
+                        // Track which schools this frat appears in
+                        if (school && school.trim() !== '') {
+                            fratData[frat].schools.add(school);
+                        }
+                    }
+                });
+                
+                // Convert to array and sort by count descending
+                const sortedFrats = Object.entries(fratData)
+                    .map(([frat, data]) => ({
+                        frat,
+                        count: data.count,
+                        schools: Array.from(data.schools)
+                    }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 5); // Top 5
+                
+                console.log('📊 Top Frats:', sortedFrats);
+                return sortedFrats;
+            } catch (error) {
+                console.error('Error fetching top frats:', error);
+                return [];
+            }
+        }
+
+        /**
+         * Render Top Schools table
+         */
+        function renderTopSchoolsTable(schools) {
+            const tableContainer = document.getElementById('topSchoolsTable');
+            
+            if (!schools || schools.length === 0) {
+                tableContainer.innerHTML = `
+                    <div style="padding: 40px 20px; text-align: center; color: #9ca3af;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📚</div>
+                        <div style="font-size: 16px;">No rivalry data yet</div>
+                        <div style="font-size: 14px; margin-top: 5px;">Schools will appear here once users join rivalries and play games</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let tableHTML = `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                            <th style="padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Rank</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">School</th>
+                            <th style="padding: 12px 16px; text-align: right; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Attempts</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            schools.forEach((school, index) => {
+                const rank = index + 1;
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                
+                tableHTML += `
+                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                        <td style="padding: 12px 16px; font-size: 18px;">${medal} ${rank}</td>
+                        <td style="padding: 12px 16px; font-weight: 500; color: #1f2937;">${school.school}</td>
+                        <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #667eea;">${school.count.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            tableContainer.innerHTML = tableHTML;
+        }
+
+        /**
+         * Render Top Frats table
+         */
+        function renderTopFratsTable(frats) {
+            const tableContainer = document.getElementById('topFratsTable');
+            
+            if (!frats || frats.length === 0) {
+                tableContainer.innerHTML = `
+                    <div style="padding: 40px 20px; text-align: center; color: #9ca3af;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">🏛️</div>
+                        <div style="font-size: 16px;">No rivalry data yet</div>
+                        <div style="font-size: 14px; margin-top: 5px;">Frats will appear here once users join rivalries and play games</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let tableHTML = `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                            <th style="padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Rank</th>
+                            <th style="padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Frat/Sorority</th>
+                            <th style="padding: 12px 16px; text-align: right; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Attempts</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            frats.forEach((frat, index) => {
+                const rank = index + 1;
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                
+                // Show school(s) if available
+                let fratDisplay = frat.frat;
+                if (frat.schools && frat.schools.length > 0) {
+                    const schoolList = frat.schools.slice(0, 2).join(', ');
+                    const moreSchools = frat.schools.length > 2 ? ` +${frat.schools.length - 2}` : '';
+                    fratDisplay += `<div style="font-size: 12px; color: #9ca3af; font-weight: normal; margin-top: 2px;">${schoolList}${moreSchools}</div>`;
+                }
+                
+                tableHTML += `
+                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                        <td style="padding: 12px 16px; font-size: 18px;">${medal} ${rank}</td>
+                        <td style="padding: 12px 16px; font-weight: 500; color: #1f2937;">${fratDisplay}</td>
+                        <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #667eea;">${frat.count.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            tableContainer.innerHTML = tableHTML;
+        }
+
+        /**
          * Load all analytics data and update UI
          */
         async function loadAnalytics() {
@@ -497,12 +745,14 @@
                 document.getElementById('analyticsError').style.display = 'none';
                 
                 // Fetch all metrics in parallel
-                const [dau, wau, totalAttempts, recentAttempts, userStats] = await Promise.all([
+                const [dau, wau, totalAttempts, recentAttempts, userStats, topSchools, topFrats] = await Promise.all([
                     getDailyActiveUsers(),
                     getWeeklyActiveUsers(),
                     getTotalAttempts(),
                     getRecentAttempts(),
-                    getUserStatistics()
+                    getUserStatistics(),
+                    getTopSchoolsByAttempts(),
+                    getTopFratsByAttempts()
                 ]);
                 
                 // Update UI with data
@@ -513,6 +763,10 @@
                 document.getElementById('totalUsersValue').textContent = userStats.totalUsers.toLocaleString();
                 document.getElementById('rivalryUsersValue').textContent = userStats.rivalryUsers.toLocaleString();
                 document.getElementById('rivalryPercentValue').textContent = `${userStats.percentage}%`;
+                
+                // Render rivalry rankings tables
+                renderTopSchoolsTable(topSchools);
+                renderTopFratsTable(topFrats);
                 
                 // Set last updated time
                 const now = new Date();
