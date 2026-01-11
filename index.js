@@ -2,7 +2,6 @@ const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 // Initialize Firebase Admin with environment variables
 admin.initializeApp({
@@ -17,42 +16,6 @@ const db = admin.firestore();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// ===== BREVO SMTP CONFIGURATION =====
-
-let transporter = null;
-
-function initializeEmailTransporter() {
-  if (transporter) return transporter;
-  
-  const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-  const SMTP_PORT = process.env.SMTP_PORT || 587;
-  const SMTP_USERNAME = process.env.SMTP_USERNAME;
-  const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
-  
-  if (!SMTP_USERNAME || !SMTP_PASSWORD) {
-    console.error('❌ SMTP credentials not set. Required: SMTP_USERNAME, SMTP_PASSWORD');
-    return null;
-  }
-  
-  console.log('📧 Initializing email transporter...');
-  console.log('SMTP Host:', SMTP_HOST);
-  console.log('SMTP Port:', SMTP_PORT);
-  console.log('SMTP Username:', SMTP_USERNAME);
-  
-  transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: false, // Use TLS
-    auth: {
-      user: SMTP_USERNAME,
-      pass: SMTP_PASSWORD
-    }
-  });
-  
-  console.log('✅ Email transporter initialized');
-  return transporter;
-}
 
 // ===== RATE LIMITING HELPERS =====
 
@@ -201,61 +164,6 @@ app.use((req, res, next) => {
     next();
   } else {
     express.json()(req, res, next);
-  }
-});
-
-// ===== TEST SMTP ENDPOINT (FOR DEBUGGING) =====
-
-app.get('/test-smtp', async (req, res) => {
-  console.log('🧪 Testing SMTP connection...');
-  
-  const emailTransporter = initializeEmailTransporter();
-  
-  if (!emailTransporter) {
-    return res.status(500).json({
-      success: false,
-      error: 'Email transporter not initialized. Check SMTP_USERNAME and SMTP_PASSWORD env vars.'
-    });
-  }
-  
-  try {
-    // Verify SMTP connection
-    console.log('🔌 Verifying SMTP connection...');
-    await emailTransporter.verify();
-    console.log('✅ SMTP connection verified!');
-    
-    // Send test email
-    const testEmail = req.query.email || 'test@example.com';
-    console.log('📧 Sending test email to:', testEmail);
-    
-    const info = await emailTransporter.sendMail({
-      from: {
-        name: 'TopSeat',
-        address: 'jmkwco@gmail.com'
-      },
-      to: testEmail,
-      subject: 'Test Email from Sky Fall',
-      html: '<h1>Test Email</h1><p>If you receive this, SMTP is working correctly!</p>'
-    });
-    
-    console.log('✅ Test email sent!');
-    console.log('Message ID:', info.messageId);
-    
-    res.json({
-      success: true,
-      message: 'SMTP test successful',
-      messageId: info.messageId,
-      recipient: testEmail
-    });
-    
-  } catch (error) {
-    console.error('❌ SMTP test failed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      code: error.code,
-      response: error.response
-    });
   }
 });
 
@@ -1034,118 +942,6 @@ function generateVerificationLink(token) {
 /**
  * Send verification email using Brevo
  */
-/**
- * Send verification email using Brevo SMTP
- */
-async function sendVerificationEmail(email, verificationLink) {
-  console.log('========================================');
-  console.log('📧 SEND VERIFICATION EMAIL');
-  console.log('========================================');
-  console.log('To:', email);
-  console.log('Link:', verificationLink);
-  console.log('Timestamp:', new Date().toISOString());
-  
-  const emailTransporter = initializeEmailTransporter();
-  
-  if (!emailTransporter) {
-    console.error('❌ Email transporter not initialized');
-    console.error('Missing: SMTP_USERNAME or SMTP_PASSWORD');
-    return false;
-  }
-  
-  const mailOptions = {
-    from: {
-      name: 'TopSeat',
-      address: 'jmkwco@gmail.com'
-    },
-    to: email,
-    subject: 'Verify Your Sky Fall Account',
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); 
-                   color: white; padding: 30px; text-align: center; border-radius: 8px; }
-          .content { background: #f9fafb; padding: 30px; margin: 20px 0; border-radius: 8px; }
-          .button { display: inline-block; padding: 14px 32px; background: #2563eb; 
-                   color: white !important; text-decoration: none; border-radius: 8px; 
-                   font-weight: bold; margin: 20px 0; }
-          .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
-          .link-text { word-break: break-all; color: #2563eb; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1 style="margin: 0; color: white;">🎮 Welcome to Sky Fall!</h1>
-          </div>
-          <div class="content">
-            <h2 style="color: #1f2937;">Verify Your Email Address</h2>
-            <p>Thanks for signing up! Please verify your email address to start playing and earning rewards.</p>
-            <p>Click the button below to verify your account:</p>
-            <div style="text-align: center;">
-              <a href="${verificationLink}" class="button">Verify Email Address</a>
-            </div>
-            <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">
-              Or copy and paste this link: <br>
-              <span class="link-text">${verificationLink}</span>
-            </p>
-            <p style="margin-top: 20px; color: #dc2626; font-weight: bold;">
-              ⚠️ This link expires in 24 hours.
-            </p>
-          </div>
-          <div class="footer">
-            <p>If you didn't create this account, you can safely ignore this email.</p>
-            <p>© 2026 Sky Fall - Dodge obstacles, collect coins, win prizes!</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-  };
-  
-  console.log('📋 Mail Options:');
-  console.log('  From:', mailOptions.from);
-  console.log('  To:', mailOptions.to);
-  console.log('  Subject:', mailOptions.subject);
-  
-  try {
-    console.log('📤 Sending email via Brevo SMTP...');
-    const info = await emailTransporter.sendMail(mailOptions);
-    
-    console.log('========================================');
-    console.log('✅ EMAIL SENT SUCCESSFULLY');
-    console.log('========================================');
-    console.log('Message ID:', info.messageId);
-    console.log('Response:', info.response);
-    console.log('Accepted:', info.accepted);
-    console.log('Rejected:', info.rejected);
-    console.log('========================================');
-    
-    return true;
-  } catch (error) {
-    console.log('========================================');
-    console.error('❌ EMAIL SEND FAILED');
-    console.log('========================================');
-    console.error('Error Type:', error.name);
-    console.error('Error Code:', error.code);
-    console.error('Error Message:', error.message);
-    
-    if (error.response) {
-      console.error('SMTP Response:', error.response);
-    }
-    
-    if (error.responseCode) {
-      console.error('Response Code:', error.responseCode);
-    }
-    
-    console.error('Full Error:', JSON.stringify(error, null, 2));
-    console.log('========================================');
-    
-    return false;
-  }
-}
+// Email verification temporarily disabled
+// sendVerificationEmail function removed
+
