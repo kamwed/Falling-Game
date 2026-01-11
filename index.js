@@ -331,18 +331,16 @@ app.post('/api/track-signup', async (req, res) => {
 
 /**
  * POST /api/send-verification-email
- * Send verification email to user after signup
+ * DISABLED: Auto-verify users (email sending temporarily disabled)
  */
 app.post('/api/send-verification-email', async (req, res) => {
   try {
     const { uid, email } = req.body;
     
-    console.log('📧 ===== SEND VERIFICATION EMAIL REQUEST =====');
+    console.log('📧 ===== AUTO-VERIFY USER (Email Disabled) =====');
     console.log('Timestamp:', new Date().toISOString());
     console.log('UID:', uid);
     console.log('Email:', email);
-    console.log('BREVO_SECRET_KEY exists:', !!process.env.BREVO_SECRET_KEY);
-    console.log('BREVO_SECRET_KEY length:', process.env.BREVO_SECRET_KEY?.length);
     
     if (!uid || !email) {
       console.error('❌ Missing parameters');
@@ -352,49 +350,43 @@ app.post('/api/send-verification-email', async (req, res) => {
       });
     }
     
-    // Generate verification token
+    // Generate token for record-keeping
     const token = generateVerificationToken();
     const expiresAt = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      new Date(Date.now() + 24 * 60 * 60 * 1000)
     );
     
-    console.log('🔑 Generated token (first 10 chars):', token.substring(0, 10) + '...');
-    console.log('⏰ Expires at:', expiresAt.toDate().toISOString());
+    console.log('🔑 Generated token (for record)');
     
-    // Store verification token in Firestore
+    // Store verification record as AUTO-VERIFIED
     await db.collection('emailVerifications').doc(uid).set({
       email: email,
       token: token,
       createdAt: admin.firestore.Timestamp.now(),
       expiresAt: expiresAt,
-      verified: false,
-      uid: uid
+      verified: true,  // AUTO-VERIFIED
+      verifiedAt: admin.firestore.Timestamp.now(),
+      uid: uid,
+      autoVerified: true  // Flag to indicate this was auto-verified
     });
     
-    console.log('✅ Verification token stored in Firestore');
+    console.log('✅ Verification record stored (auto-verified)');
     
-    // Generate verification link
-    const verificationLink = generateVerificationLink(token);
-    console.log('🔗 Verification link:', verificationLink);
+    // Update user as verified
+    await db.collection('users').doc(uid).update({
+      emailVerified: true,
+      emailVerifiedAt: admin.firestore.Timestamp.now(),
+      autoVerified: true
+    });
     
-    // Send email
-    console.log('📤 Calling sendVerificationEmail...');
-    const emailSent = await sendVerificationEmail(email, verificationLink);
-    
-    if (!emailSent) {
-      console.error('❌ sendVerificationEmail returned false');
-      return res.status(500).json({
-        error: 'Failed to send verification email',
-        code: 'EMAIL_SEND_FAILED'
-      });
-    }
-    
-    console.log('✅ ===== VERIFICATION EMAIL SENT SUCCESSFULLY =====');
+    console.log('✅ User marked as verified in users collection');
+    console.log('✅ ===== USER AUTO-VERIFIED SUCCESSFULLY =====');
     
     res.json({
       success: true,
-      message: 'Verification email sent! Please check your inbox.',
-      emailSent: true
+      message: 'Account verified! You can now play.',
+      emailSent: false,
+      autoVerified: true
     });
     
   } catch (error) {
@@ -531,13 +523,13 @@ app.get('/api/verify-email', async (req, res) => {
 
 /**
  * POST /api/resend-verification
- * Resend verification email for unverified users
+ * DISABLED: Auto-verify users (email sending temporarily disabled)
  */
 app.post('/api/resend-verification', async (req, res) => {
   try {
     const { uid, email } = req.body;
     
-    console.log('📧 Resending verification email:', { uid, email });
+    console.log('📧 Auto-verify user (resend disabled):', { uid, email });
     
     if (!uid || !email) {
       return res.status(400).json({
@@ -546,7 +538,7 @@ app.post('/api/resend-verification', async (req, res) => {
       });
     }
     
-    // Check if user exists and is unverified
+    // Check if user exists
     const userDoc = await db.collection('users').doc(uid).get();
     if (!userDoc.exists()) {
       return res.status(404).json({
@@ -562,38 +554,38 @@ app.post('/api/resend-verification', async (req, res) => {
       });
     }
     
-    // Generate new token
+    // Generate token for record
     const token = generateVerificationToken();
     const expiresAt = admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 24 * 60 * 60 * 1000)
     );
     
-    // Update verification record
+    // Update verification record as AUTO-VERIFIED
     await db.collection('emailVerifications').doc(uid).set({
       email: email,
       token: token,
       createdAt: admin.firestore.Timestamp.now(),
       expiresAt: expiresAt,
-      verified: false,
-      uid: uid
+      verified: true,  // AUTO-VERIFIED
+      verifiedAt: admin.firestore.Timestamp.now(),
+      uid: uid,
+      autoVerified: true
     });
     
-    // Send email
-    const verificationLink = generateVerificationLink(token);
-    const emailSent = await sendVerificationEmail(email, verificationLink);
+    // Update user as verified
+    await db.collection('users').doc(uid).update({
+      emailVerified: true,
+      emailVerifiedAt: admin.firestore.Timestamp.now(),
+      autoVerified: true
+    });
     
-    if (!emailSent) {
-      return res.status(500).json({
-        error: 'Failed to send verification email',
-        code: 'EMAIL_SEND_FAILED'
-      });
-    }
-    
-    console.log('✅ Verification email resent successfully');
+    console.log('✅ User auto-verified (email disabled)');
     
     res.json({
       success: true,
-      message: 'Verification email sent! Check your inbox.'
+      message: 'Account verified! You can now play.',
+      emailSent: false,
+      autoVerified: true
     });
     
   } catch (error) {
