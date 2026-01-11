@@ -2,6 +2,7 @@ const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 // Initialize Firebase Admin with environment variables
 admin.initializeApp({
@@ -16,6 +17,42 @@ const db = admin.firestore();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ===== BREVO SMTP CONFIGURATION =====
+
+let transporter = null;
+
+function initializeEmailTransporter() {
+  if (transporter) return transporter;
+  
+  const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+  const SMTP_PORT = process.env.SMTP_PORT || 587;
+  const SMTP_USERNAME = process.env.SMTP_USERNAME;
+  const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
+  
+  if (!SMTP_USERNAME || !SMTP_PASSWORD) {
+    console.error('❌ SMTP credentials not set. Required: SMTP_USERNAME, SMTP_PASSWORD');
+    return null;
+  }
+  
+  console.log('📧 Initializing email transporter...');
+  console.log('SMTP Host:', SMTP_HOST);
+  console.log('SMTP Port:', SMTP_PORT);
+  console.log('SMTP Username:', SMTP_USERNAME);
+  
+  transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: false, // Use TLS
+    auth: {
+      user: SMTP_USERNAME,
+      pass: SMTP_PASSWORD
+    }
+  });
+  
+  console.log('✅ Email transporter initialized');
+  return transporter;
+}
 
 // ===== RATE LIMITING HELPERS =====
 
@@ -950,30 +987,28 @@ function generateVerificationLink(token) {
 /**
  * Send verification email using Brevo
  */
+/**
+ * Send verification email using Brevo SMTP
+ */
 async function sendVerificationEmail(email, verificationLink) {
-  const BREVO_API_KEY = process.env.BREVO_SECRET_KEY;
+  const emailTransporter = initializeEmailTransporter();
   
-  if (!BREVO_API_KEY) {
-    console.error('❌ BREVO_SECRET_KEY environment variable not set');
+  if (!emailTransporter) {
+    console.error('❌ Email transporter not initialized');
     return false;
   }
   
-  console.log('📧 Attempting to send email to:', email);
+  console.log('📧 Attempting to send verification email to:', email);
   console.log('🔗 Verification link:', verificationLink);
   
-  const emailData = {
-    sender: {
-      name: 'Sky Fall Game',
-      email: 'contact@brevo.com'
+  const mailOptions = {
+    from: {
+      name: 'TopSeat',
+      address: 'jmkwco@gmail.com'
     },
-    to: [
-      {
-        email: email,
-        name: email.split('@')[0]
-      }
-    ],
+    to: email,
     subject: 'Verify Your Sky Fall Account',
-    htmlContent: `
+    html: `
       <!DOCTYPE html>
       <html>
       <head>
@@ -1021,54 +1056,24 @@ async function sendVerificationEmail(email, verificationLink) {
     `
   };
   
-  console.log('📤 Sending email via Brevo API...');
-  
-  return new Promise((resolve) => {
-    const https = require('https');
+  try {
+    console.log('📤 Sending email via Brevo SMTP...');
+    const info = await emailTransporter.sendMail(mailOptions);
     
-    const postData = JSON.stringify(emailData);
+    console.log('✅ Email sent successfully!');
+    console.log('Message ID:', info.messageId);
+    console.log('Response:', info.response);
     
-    const options = {
-      hostname: 'api.brevo.com',
-      port: 443,
-      path: '/v3/smtp/email',
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': BREVO_API_KEY,
-        'content-type': 'application/json',
-        'content-length': Buffer.byteLength(postData)
-      }
-    };
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending email via SMTP:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
     
-    const req = https.request(options, (res) => {
-      let responseData = '';
-      
-      res.on('data', (chunk) => {
-        responseData += chunk;
-      });
-      
-      res.on('end', () => {
-        console.log('📬 Brevo response status:', res.statusCode);
-        console.log('📬 Brevo response body:', responseData);
-        
-        if (res.statusCode === 201 || res.statusCode === 200) {
-          console.log('✅ Verification email sent successfully to:', email);
-          resolve(true);
-        } else {
-          console.error('❌ Brevo API error:', responseData);
-          resolve(false);
-        }
-      });
-    });
+    if (error.response) {
+      console.error('SMTP Response:', error.response);
+    }
     
-    req.on('error', (error) => {
-      console.error('❌ Error sending verification email:', error);
-      console.error('Error details:', error.message);
-      resolve(false);
-    });
-    
-    req.write(postData);
-    req.end();
-  });
+    return false;
+  }
 }
